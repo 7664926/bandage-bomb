@@ -42,7 +42,6 @@
             text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
         }
         
-        /* 难度选择 */
         .difficulty-selector {
             display: flex;
             justify-content: center;
@@ -71,7 +70,6 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
         
-        /* 规则弹窗 */
         .rules-modal {
             display: none;
             position: fixed;
@@ -164,7 +162,6 @@
             background: rgba(255, 217, 61, 0.2);
         }
         
-        /* 玩家信息 - 已缩小 */
         .player-info {
             text-align: center;
             padding: 6px;
@@ -199,7 +196,6 @@
             margin: 2px 0;
         }
         
-        /* AI状态标签 */
         .ai-status {
             font-size: 10px;
             color: #ffa500;
@@ -207,7 +203,6 @@
             font-style: italic;
         }
         
-        /* 战斗信息 */
         .battle-info {
             text-align: center;
             padding: 16px 12px;
@@ -230,7 +225,6 @@
             font-weight: bold;
         }
         
-        /* 行动对比行 - 取中间值，偏向现在 */
         .action-compare {
             font-size: 18px;
             font-weight: 800;
@@ -238,7 +232,6 @@
             text-shadow: 0 0 8px rgba(255, 217, 61, 0.5);
         }
         
-        /* 行动名称 - 加粗，但不过度 */
         .action-name {
             font-weight: 800;
             font-size: 19px;
@@ -246,14 +239,12 @@
             text-shadow: 0 0 10px rgba(255, 217, 61, 0.7);
         }
         
-        /* 结算结果行 - 略微放大 */
         .result-line {
             font-size: 16px;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
         
-        /* 结束提示 - 放大 */
         .end-message {
             font-size: 20px;
             font-weight: 900;
@@ -261,7 +252,6 @@
             text-shadow: 0 0 15px rgba(255, 217, 61, 0.6);
         }
         
-        /* 行动按钮 */
         .actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -299,7 +289,6 @@
             grid-column: span 2;
         }
         
-        /* 禁用按钮样式 */
         .actions button:disabled {
             background: #2a2a3e;
             color: #555;
@@ -325,7 +314,6 @@
             opacity: 0.8;
         }
         
-        /* 重新开始按钮 */
         .restart-btn {
             width: 100%;
             margin-top: 10px;
@@ -343,7 +331,6 @@
             transform: scale(1.02);
         }
         
-        /* 统计信息 */
         .stats {
             display: flex;
             justify-content: space-around;
@@ -378,7 +365,7 @@
                 
                 <h4>⚡ 能量系统</h4>
                 <ul>
-                    <li>初始能量为0，上限5</li>
+                    <li>初始能量为0，上限3</li>
                     <li>使用"绷住"可获得1点能量</li>
                     <li>使用"绷绷炸弹"消耗2点能量</li>
                     <li>使用"完美绷住"消耗1点能量</li>
@@ -489,6 +476,8 @@
             lastPlayerActions: [],
         };
         
+        const MAX_ENERGY = 3;  // ← 改了这里
+        
         const difficultyConfig = {
             easy: { name: '简单', randomness: 0.7, aggression: 0.3, defense: 0.2, learning: false },
             normal: { name: '普通', randomness: 0.4, aggression: 0.5, defense: 0.4, learning: false },
@@ -590,7 +579,7 @@
         
         function updateEnergy(actor, action) {
             if (action === '绷住') {
-                actor.energy = Math.min(5, actor.energy + 1);
+                actor.energy = Math.min(MAX_ENERGY, actor.energy + 1);  // ← 改了这里
             } else if (action === '绷绷炸弹') {
                 actor.energy = Math.max(0, actor.energy - 2);
             } else if (action === '完美绷住') {
