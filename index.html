@@ -41,7 +41,6 @@
             letter-spacing: 2px;
             text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
         }
-        
         .difficulty-selector {
             display: flex;
             justify-content: center;
@@ -69,7 +68,6 @@
             color: white;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
-        
         .rules-modal {
             display: none;
             position: fixed;
@@ -161,7 +159,6 @@
         .rules-toggle-btn:hover {
             background: rgba(255, 217, 61, 0.2);
         }
-        
         .player-info {
             text-align: center;
             padding: 6px;
@@ -195,14 +192,12 @@
             color: #ffd93d;
             margin: 2px 0;
         }
-        
         .ai-status {
             font-size: 10px;
             color: #ffa500;
             margin-top: 1px;
             font-style: italic;
         }
-        
         .battle-info {
             text-align: center;
             padding: 16px 12px;
@@ -224,34 +219,29 @@
             white-space: pre-line;
             font-weight: bold;
         }
-        
         .action-compare {
             font-size: 18px;
             font-weight: 800;
             letter-spacing: 0.5px;
             text-shadow: 0 0 8px rgba(255, 217, 61, 0.5);
         }
-        
         .action-name {
             font-weight: 800;
             font-size: 19px;
             color: #ffffff;
             text-shadow: 0 0 10px rgba(255, 217, 61, 0.7);
         }
-        
         .result-line {
             font-size: 16px;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
-        
         .end-message {
             font-size: 20px;
             font-weight: 900;
             letter-spacing: 1px;
             text-shadow: 0 0 15px rgba(255, 217, 61, 0.6);
         }
-        
         .actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -288,7 +278,6 @@
         .actions button:last-child {
             grid-column: span 2;
         }
-        
         .actions button:disabled {
             background: #2a2a3e;
             color: #555;
@@ -313,7 +302,6 @@
             white-space: nowrap;
             opacity: 0.8;
         }
-        
         .restart-btn {
             width: 100%;
             margin-top: 10px;
@@ -330,7 +318,6 @@
         .restart-btn:hover {
             transform: scale(1.02);
         }
-        
         .stats {
             display: flex;
             justify-content: space-around;
@@ -346,23 +333,18 @@
 <body>
     <div class="game-container">
         <div class="game-title">⚡ 绷绷炸弹 ⚡</div>
-        
         <button class="rules-toggle-btn" onclick="toggleRules()">📖 查看游戏规则</button>
-        
         <div class="difficulty-selector">
             <button class="difficulty-btn active" data-difficulty="easy" onclick="selectDifficulty('easy')">😊 简单</button>
             <button class="difficulty-btn" data-difficulty="normal" onclick="selectDifficulty('normal')">🤔 普通</button>
             <button class="difficulty-btn" data-difficulty="hard" onclick="selectDifficulty('hard')">😈 困难</button>
             <button class="difficulty-btn" data-difficulty="learning" onclick="selectDifficulty('learning')">🧠 学习</button>
         </div>
-        
         <div class="rules-modal" id="rulesModal">
             <div class="rules-content">
                 <h3>📖 绷绷炸弹游戏规则</h3>
-                
                 <h4>🎯 游戏目标</h4>
                 <p>将对方生命值降至0即可获胜！双方各有4点❤️</p>
-                
                 <h4>⚡ 能量系统</h4>
                 <ul>
                     <li>初始能量为0，上限3</li>
@@ -370,47 +352,15 @@
                     <li>使用"绷绷炸弹"消耗2点能量</li>
                     <li>使用"完美绷住"消耗1点能量</li>
                 </ul>
-                
                 <h4>📋 行动列表</h4>
                 <table class="action-table">
-                    <tr>
-                        <th>行动</th>
-                        <th>能量</th>
-                        <th>伤害</th>
-                        <th>防御</th>
-                    </tr>
-                    <tr>
-                        <td>🛡️ 绷住</td>
-                        <td>+1</td>
-                        <td>0</td>
-                        <td>无</td>
-                    </tr>
-                    <tr>
-                        <td>⚔️ 破绷</td>
-                        <td>0</td>
-                        <td>1</td>
-                        <td>无</td>
-                    </tr>
-                    <tr>
-                        <td>💣 绷绷炸弹</td>
-                        <td>-2</td>
-                        <td>3</td>
-                        <td>无</td>
-                    </tr>
-                    <tr>
-                        <td>🛡️ 轻松绷住</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>挡破绷</td>
-                    </tr>
-                    <tr>
-                        <td>✨ 完美绷住</td>
-                        <td>-1</td>
-                        <td>0</td>
-                        <td>挡一切</td>
-                    </tr>
+                    <tr><th>行动</th><th>能量</th><th>伤害</th><th>防御</th></tr>
+                    <tr><td>🛡️ 绷住</td><td>+1</td><td>0</td><td>无</td></tr>
+                    <tr><td>⚔️ 破绷</td><td>0</td><td>1</td><td>无</td></tr>
+                    <tr><td>💣 绷绷炸弹</td><td>-2</td><td>3</td><td>无</td></tr>
+                    <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷</td></tr>
+                    <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切</td></tr>
                 </table>
-                
                 <h4>⚠️ 重要规则</h4>
                 <ul>
                     <li>破绷不能连续两轮使用</li>
@@ -418,28 +368,23 @@
                     <li>防御成功则伤害完全抵消</li>
                     <li>灰色按钮表示当前不可用</li>
                 </ul>
-                
                 <button class="close-rules-btn" onclick="toggleRules()">✅ 我知道了</button>
             </div>
         </div>
-        
         <div class="player-info ai" id="aiInfo">
             <div class="player-name">🤖 AI对手</div>
             <div class="hp" id="aiHp">❤️❤️❤️❤️</div>
             <div class="energy" id="aiEnergy">⚡ 能量：0</div>
             <div class="ai-status" id="aiStatus"></div>
         </div>
-        
         <div class="battle-info">
             <div id="message">🎮 游戏开始！<br>选择你的行动</div>
         </div>
-        
         <div class="player-info player" id="playerInfo">
             <div class="player-name">😊 你</div>
             <div class="hp" id="playerHp">❤️❤️❤️❤️</div>
             <div class="energy" id="playerEnergy">⚡ 能量：0</div>
         </div>
-        
         <div class="actions" id="actions">
             <button id="btn-绷住" onclick="playerAction('绷住')">🛡️ 绷住<small>能量+1</small></button>
             <button id="btn-破绷" onclick="playerAction('破绷')">⚔️ 破绷<small>1伤害</small></button>
@@ -447,9 +392,7 @@
             <button id="btn-轻松绷住" onclick="playerAction('轻松绷住')">🛡️ 轻松绷住<small>挡破绷</small></button>
             <button id="btn-完美绷住" onclick="playerAction('完美绷住')">✨ 完美绷住<small>挡一切 -1⚡</small></button>
         </div>
-        
         <button class="restart-btn" id="restartBtn" onclick="restartGame()">🔄 重新开始</button>
-        
         <div class="stats">
             <span>🏆 胜: <span id="wins">0</span></span>
             <span>😢 负: <span id="losses">0</span></span>
@@ -480,9 +423,9 @@
         
         const difficultyConfig = {
             easy: { name: '简单', randomness: 0.7, aggression: 0.3, defense: 0.2, learning: false },
-            normal: { name: '普通', randomness: 0.4, aggression: 0.5, defense: 0.4, learning: false },
-            hard: { name: '困难', randomness: 0.15, aggression: 0.7, defense: 0.7, learning: false },
-            learning: { name: '学习', randomness: 0.1, aggression: 0.8, defense: 0.8, learning: true }
+            normal: { name: '普通', randomness: 0.3, aggression: 0.55, defense: 0.5, learning: false },
+            hard: { name: '困难', randomness: 0.1, aggression: 0.75, defense: 0.75, learning: false },
+            learning: { name: '学习', randomness: 0.05, aggression: 0.85, defense: 0.85, learning: true }
         };
         
         function selectDifficulty(diff) {
@@ -593,7 +536,7 @@
             if (!aiMemory.playerPatterns[key][action]) aiMemory.playerPatterns[key][action] = 0;
             aiMemory.playerPatterns[key][action]++;
             aiMemory.lastPlayerActions.push(action);
-            if (aiMemory.lastPlayerActions.length > 20) aiMemory.lastPlayerActions.shift();
+            if (aiMemory.lastPlayerActions.length > 30) aiMemory.lastPlayerActions.shift();
         }
         
         function analyzePlayerPattern(state) {
@@ -626,8 +569,37 @@
         function aiDecideNormal() {
             const ai = gameState.ai;
             const player = gameState.player;
-            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.6) return '绷绷炸弹';
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.4) return '完美绷住';
+            
+            // 必杀检测（新增：比原来更强）
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) {
+                return '绷绷炸弹';
+            }
+            
+            // 击杀机会
+            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.7) {
+                return '绷绷炸弹';
+            }
+            
+            // 防守
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.5) {
+                return '完美绷住';
+            }
+            
+            // 破绷消耗
+            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) {
+                return '破绷';
+            }
+            
+            // 能量管理
+            if (ai.energy < 2 && ai.hp > 2) {
+                return '绷住';
+            }
+            
+            // 能量够了就施压
+            if (ai.energy >= 2 && Math.random() < 0.5) {
+                return '绷绷炸弹';
+            }
+            
             const options = ['绷住'];
             if (!ai.lastUsedBreak) options.push('破绷');
             if (ai.energy >= 2) options.push('绷绷炸弹');
@@ -638,11 +610,37 @@
         function aiDecideHard() {
             const ai = gameState.ai;
             const player = gameState.player;
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-            if (player.energy >= 2 && player.hp > ai.hp && ai.energy >= 1 && Math.random() < 0.7) return '完美绷住';
-            if (!ai.lastUsedBreak && Math.random() < 0.5) return '破绷';
-            if (ai.energy < 2 && ai.hp > 2) return '绷住';
-            if (ai.energy >= 2) return '绷绷炸弹';
+            
+            // 必杀检测
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) {
+                return '绷绷炸弹';
+            }
+            
+            // 防守反击
+            if (player.energy >= 2 && player.hp > ai.hp && ai.energy >= 1 && Math.random() < 0.8) {
+                return '完美绷住';
+            }
+            
+            // 预判你的炸弹
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.6) {
+                return '完美绷住';
+            }
+            
+            // 破绷压制
+            if (!ai.lastUsedBreak && Math.random() < 0.6) {
+                return '破绷';
+            }
+            
+            // 能量管理
+            if (ai.energy < 2 && ai.hp > 2) {
+                return '绷住';
+            }
+            
+            // 能量满了就炸
+            if (ai.energy >= 2 && Math.random() < 0.8) {
+                return '绷绷炸弹';
+            }
+            
             const options = ['绷住', '破绷', '绷绷炸弹'];
             return options[Math.floor(Math.random() * options.length)];
         }
@@ -650,21 +648,52 @@
         function aiDecideLearning() {
             const ai = gameState.ai;
             const player = gameState.player;
+            
+            // 1. 分析你的模式
             const pattern = analyzePlayerPattern(gameState);
-            if (pattern && pattern.confidence > 0.4) {
+            if (pattern && pattern.confidence > 0.35) {
                 if (pattern.action === '绷绷炸弹' && ai.energy >= 1) return '完美绷住';
                 if (pattern.action === '破绷') return '轻松绷住';
                 if (pattern.action === '绷住' && !ai.lastUsedBreak) return '破绷';
+                if (pattern.action === '完美绷住' && ai.energy >= 2) return '绷住';
+                if (pattern.action === '轻松绷住' && ai.energy >= 2) return '绷绷炸弹';
             }
-            if (player.hp <= 3 && ai.energy >= 2 && (player.energy < 1 || Math.random() < 0.8)) return '绷绷炸弹';
-            if (aiMemory.lastPlayerActions.length > 5) {
+            
+            // 2. 必杀
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) {
+                return '绷绷炸弹';
+            }
+            
+            // 3. 激进击杀
+            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.9) {
+                return '绷绷炸弹';
+            }
+            
+            // 4. 防守
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.7) {
+                return '完美绷住';
+            }
+            
+            // 5. 分析你的防御习惯
+            if (aiMemory.lastPlayerActions.length > 8) {
                 const recentDefensive = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
-                if (recentDefensive > 2 && ai.energy >= 2) return '绷住';
+                if (recentDefensive > 4 && ai.energy >= 2) return '绷住';
+                if (recentDefensive <= 2 && ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
             }
-            if (ai.energy >= 2 && Math.random() < 0.7) return '绷绷炸弹';
-            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) return '破绷';
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.6) return '完美绷住';
+            
+            // 6. 破绷骚扰
+            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.5) {
+                return '破绷';
+            }
+            
+            // 7. 能量施压
+            if (ai.energy >= 2 && Math.random() < 0.8) {
+                return '绷绷炸弹';
+            }
+            
+            // 8. 能量管理
             if (ai.energy < 2) return '绷住';
+            
             return '破绷';
         }
         
