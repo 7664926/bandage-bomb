@@ -355,7 +355,7 @@
                 <h4>📋 行动列表</h4>
                 <table class="action-table">
                     <tr><th>行动</th><th>能量</th><th>伤害</th><th>防御</th></tr>
-                    <tr><td>🛡️ 绷住</td><td>+1</td><td>0</td><td>无</td></tr>
+                    <tr><td>🔋 绷住</td><td>+1</td><td>0</td><td>无</td></tr>
                     <tr><td>⚔️ 破绷</td><td>0</td><td>1</td><td>无</td></tr>
                     <tr><td>💣 绷绷炸弹</td><td>-2</td><td>3</td><td>无</td></tr>
                     <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷</td></tr>
@@ -364,7 +364,6 @@
                 <h4>⚠️ 重要规则</h4>
                 <ul>
                     <li>破绷不能连续两轮使用</li>
-                    <li>能量不足时行动无效，自动变为"绷住"</li>
                     <li>防御成功则伤害完全抵消</li>
                     <li>灰色按钮表示当前不可用</li>
                 </ul>
@@ -386,7 +385,7 @@
             <div class="energy" id="playerEnergy">⚡ 能量：0</div>
         </div>
         <div class="actions" id="actions">
-            <button id="btn-绷住" onclick="playerAction('绷住')">🛡️ 绷住<small>能量+1</small></button>
+            <button id="btn-绷住" onclick="playerAction('绷住')">🔋 绷住<small>能量+1</small></button>
             <button id="btn-破绷" onclick="playerAction('破绷')">⚔️ 破绷<small>1伤害</small></button>
             <button id="btn-绷绷炸弹" onclick="playerAction('绷绷炸弹')">💣 绷绷炸弹<small>3伤害 -2⚡</small></button>
             <button id="btn-轻松绷住" onclick="playerAction('轻松绷住')">🛡️ 轻松绷住<small>挡破绷</small></button>
@@ -569,37 +568,12 @@
         function aiDecideNormal() {
             const ai = gameState.ai;
             const player = gameState.player;
-            
-            // 必杀检测（新增：比原来更强）
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) {
-                return '绷绷炸弹';
-            }
-            
-            // 击杀机会
-            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.7) {
-                return '绷绷炸弹';
-            }
-            
-            // 防守
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.5) {
-                return '完美绷住';
-            }
-            
-            // 破绷消耗
-            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) {
-                return '破绷';
-            }
-            
-            // 能量管理
-            if (ai.energy < 2 && ai.hp > 2) {
-                return '绷住';
-            }
-            
-            // 能量够了就施压
-            if (ai.energy >= 2 && Math.random() < 0.5) {
-                return '绷绷炸弹';
-            }
-            
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
+            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.7) return '绷绷炸弹';
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.5) return '完美绷住';
+            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) return '破绷';
+            if (ai.energy < 2 && ai.hp > 2) return '绷住';
+            if (ai.energy >= 2 && Math.random() < 0.5) return '绷绷炸弹';
             const options = ['绷住'];
             if (!ai.lastUsedBreak) options.push('破绷');
             if (ai.energy >= 2) options.push('绷绷炸弹');
@@ -610,37 +584,12 @@
         function aiDecideHard() {
             const ai = gameState.ai;
             const player = gameState.player;
-            
-            // 必杀检测
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) {
-                return '绷绷炸弹';
-            }
-            
-            // 防守反击
-            if (player.energy >= 2 && player.hp > ai.hp && ai.energy >= 1 && Math.random() < 0.8) {
-                return '完美绷住';
-            }
-            
-            // 预判你的炸弹
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.6) {
-                return '完美绷住';
-            }
-            
-            // 破绷压制
-            if (!ai.lastUsedBreak && Math.random() < 0.6) {
-                return '破绷';
-            }
-            
-            // 能量管理
-            if (ai.energy < 2 && ai.hp > 2) {
-                return '绷住';
-            }
-            
-            // 能量满了就炸
-            if (ai.energy >= 2 && Math.random() < 0.8) {
-                return '绷绷炸弹';
-            }
-            
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
+            if (player.energy >= 2 && player.hp > ai.hp && ai.energy >= 1 && Math.random() < 0.8) return '完美绷住';
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.6) return '完美绷住';
+            if (!ai.lastUsedBreak && Math.random() < 0.6) return '破绷';
+            if (ai.energy < 2 && ai.hp > 2) return '绷住';
+            if (ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
             const options = ['绷住', '破绷', '绷绷炸弹'];
             return options[Math.floor(Math.random() * options.length)];
         }
@@ -648,8 +597,6 @@
         function aiDecideLearning() {
             const ai = gameState.ai;
             const player = gameState.player;
-            
-            // 1. 分析你的模式
             const pattern = analyzePlayerPattern(gameState);
             if (pattern && pattern.confidence > 0.35) {
                 if (pattern.action === '绷绷炸弹' && ai.energy >= 1) return '完美绷住';
@@ -658,42 +605,17 @@
                 if (pattern.action === '完美绷住' && ai.energy >= 2) return '绷住';
                 if (pattern.action === '轻松绷住' && ai.energy >= 2) return '绷绷炸弹';
             }
-            
-            // 2. 必杀
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) {
-                return '绷绷炸弹';
-            }
-            
-            // 3. 激进击杀
-            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.9) {
-                return '绷绷炸弹';
-            }
-            
-            // 4. 防守
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.7) {
-                return '完美绷住';
-            }
-            
-            // 5. 分析你的防御习惯
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
+            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.9) return '绷绷炸弹';
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.7) return '完美绷住';
             if (aiMemory.lastPlayerActions.length > 8) {
                 const recentDefensive = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
                 if (recentDefensive > 4 && ai.energy >= 2) return '绷住';
                 if (recentDefensive <= 2 && ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
             }
-            
-            // 6. 破绷骚扰
-            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.5) {
-                return '破绷';
-            }
-            
-            // 7. 能量施压
-            if (ai.energy >= 2 && Math.random() < 0.8) {
-                return '绷绷炸弹';
-            }
-            
-            // 8. 能量管理
+            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.5) return '破绷';
+            if (ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
             if (ai.energy < 2) return '绷住';
-            
             return '破绷';
         }
         
