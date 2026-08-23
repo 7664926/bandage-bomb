@@ -476,7 +476,7 @@
             lastPlayerActions: [],
         };
         
-        const MAX_ENERGY = 3;  // ← 改了这里
+        const MAX_ENERGY = 3;
         
         const difficultyConfig = {
             easy: { name: '简单', randomness: 0.7, aggression: 0.3, defense: 0.2, learning: false },
@@ -579,7 +579,7 @@
         
         function updateEnergy(actor, action) {
             if (action === '绷住') {
-                actor.energy = Math.min(MAX_ENERGY, actor.energy + 1);  // ← 改了这里
+                actor.energy = Math.min(MAX_ENERGY, actor.energy + 1);
             } else if (action === '绷绷炸弹') {
                 actor.energy = Math.max(0, actor.energy - 2);
             } else if (action === '完美绷住') {
@@ -642,7 +642,7 @@
             if (player.energy >= 2 && player.hp > ai.hp && ai.energy >= 1 && Math.random() < 0.7) return '完美绷住';
             if (!ai.lastUsedBreak && Math.random() < 0.5) return '破绷';
             if (ai.energy < 2 && ai.hp > 2) return '绷住';
-            if (ai.energy >= 3) return '绷绷炸弹';
+            if (ai.energy >= 2) return '绷绷炸弹';
             const options = ['绷住', '破绷', '绷绷炸弹'];
             return options[Math.floor(Math.random() * options.length)];
         }
@@ -661,7 +661,7 @@
                 const recentDefensive = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
                 if (recentDefensive > 2 && ai.energy >= 2) return '绷住';
             }
-            if (ai.energy >= 3 && Math.random() < 0.7) return '绷绷炸弹';
+            if (ai.energy >= 2 && Math.random() < 0.7) return '绷绷炸弹';
             if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) return '破绷';
             if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.6) return '完美绷住';
             if (ai.energy < 2) return '绷住';
