@@ -5,329 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>绷绷炸弹 - AI对战</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+            background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+            min-height:100vh; display:flex; justify-content:center; align-items:center;
+            padding:10px; user-select:none; -webkit-tap-highlight-color:transparent;
         }
         .game-container {
-            background: linear-gradient(180deg, #1a1a2e, #16213e);
-            border-radius: 20px;
-            padding: 15px;
-            width: 100%;
-            max-width: 440px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            border: 2px solid #4a4a8a;
-            max-height: 95vh;
-            overflow-y: auto;
+            background:linear-gradient(180deg,#1a1a2e,#16213e);
+            border-radius:20px; padding:15px; width:100%; max-width:440px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.5); border:2px solid #4a4a8a;
+            max-height:95vh; overflow-y:auto;
         }
         .game-title {
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-            color: #ffd93d;
-            margin-bottom: 8px;
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+            text-align:center; font-size:22px; font-weight:bold; color:#ffd93d;
+            margin-bottom:8px; letter-spacing:2px; text-shadow:0 0 20px rgba(255,217,61,0.5);
         }
-        .difficulty-selector {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
+        .difficulty-selector { display:flex; justify-content:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
         .difficulty-btn {
-            padding: 6px 12px;
-            border: 2px solid #4a4a8a;
-            border-radius: 16px;
-            background: transparent;
-            color: #e0e0e0;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-            font-weight: bold;
+            padding:6px 12px; border:2px solid #4a4a8a; border-radius:16px;
+            background:transparent; color:#e0e0e0; cursor:pointer; font-size:12px;
+            transition:all 0.3s; font-weight:bold;
         }
-        .difficulty-btn:hover {
-            transform: translateY(-1px);
-        }
+        .difficulty-btn:hover { transform:translateY(-1px); }
         .difficulty-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-color: #667eea;
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            background:linear-gradient(135deg,#667eea,#764ba2); border-color:#667eea;
+            color:white; box-shadow:0 4px 15px rgba(102,126,234,0.4);
         }
         .rules-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; padding:20px;
         }
-        .rules-modal.show {
-            display: flex;
-        }
+        .rules-modal.show { display:flex; }
         .rules-content {
-            background: linear-gradient(180deg, #1a1a2e, #16213e);
-            border: 2px solid #ffd93d;
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 400px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-            color: #e0e0e0;
+            background:linear-gradient(180deg,#1a1a2e,#16213e); border:2px solid #ffd93d;
+            border-radius:20px; padding:20px; max-width:400px; width:100%;
+            max-height:80vh; overflow-y:auto; color:#e0e0e0;
         }
-        .rules-content h3 {
-            color: #ffd93d;
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 20px;
-        }
-        .rules-content h4 {
-            color: #6bff6b;
-            margin: 12px 0 5px;
-            font-size: 16px;
-        }
-        .rules-content p {
-            font-size: 13px;
-            line-height: 1.6;
-            margin: 3px 0;
-        }
-        .rules-content ul {
-            padding-left: 20px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-        .rules-content .action-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 12px;
-        }
-        .rules-content .action-table th,
-        .rules-content .action-table td {
-            border: 1px solid #4a4a8a;
-            padding: 6px;
-            text-align: center;
-        }
-        .rules-content .action-table th {
-            background: rgba(102, 126, 234, 0.3);
-            color: #ffd93d;
-        }
-        .close-rules-btn {
-            width: 100%;
-            padding: 10px;
-            margin-top: 15px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .rules-toggle-btn {
-            display: block;
-            margin: 0 auto 8px;
-            padding: 5px 12px;
-            background: transparent;
-            border: 1px solid #ffd93d;
-            color: #ffd93d;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-        .rules-toggle-btn:hover {
-            background: rgba(255, 217, 61, 0.2);
-        }
-        .player-info {
-            text-align: center;
-            padding: 6px;
-            border-radius: 10px;
-            margin: 4px 0;
-            transition: all 0.3s;
-        }
-        .player-info.ai {
-            background: linear-gradient(135deg, #2d1b3d, #1a1a2e);
-            border: 1.5px solid #ff6b6b;
-        }
-        .player-info.player {
-            background: linear-gradient(135deg, #1b3d2d, #1a1a2e);
-            border: 1.5px solid #6bff6b;
-        }
-        .player-name {
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 2px;
-            color: #e0e0e0;
-        }
-        .ai .player-name { color: #ff6b6b; }
-        .player .player-name { color: #6bff6b; }
-        .hp {
-            font-size: 18px;
-            margin: 2px 0;
-            letter-spacing: 1px;
-        }
-        .energy {
-            font-size: 13px;
-            color: #ffd93d;
-            margin: 2px 0;
-        }
-        .ai-status {
-            font-size: 10px;
-            color: #ffa500;
-            margin-top: 1px;
-            font-style: italic;
-        }
+        .rules-content h3 { color:#ffd93d; text-align:center; margin-bottom:15px; font-size:20px; }
+        .rules-content h4 { color:#6bff6b; margin:12px 0 5px; font-size:16px; }
+        .rules-content p { font-size:13px; line-height:1.6; margin:3px 0; }
+        .rules-content ul { padding-left:20px; font-size:13px; line-height:1.6; }
+        .rules-content .action-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:12px; }
+        .rules-content .action-table th, .rules-content .action-table td { border:1px solid #4a4a8a; padding:6px; text-align:center; }
+        .rules-content .action-table th { background:rgba(102,126,234,0.3); color:#ffd93d; }
+        .close-rules-btn { width:100%; padding:10px; margin-top:15px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; }
+        .rules-toggle-btn { display:block; margin:0 auto 8px; padding:5px 12px; background:transparent; border:1px solid #ffd93d; color:#ffd93d; border-radius:15px; cursor:pointer; font-size:12px; }
+        .player-info { text-align:center; padding:6px; border-radius:10px; margin:4px 0; }
+        .player-info.ai { background:linear-gradient(135deg,#2d1b3d,#1a1a2e); border:1.5px solid #ff6b6b; }
+        .player-info.player { background:linear-gradient(135deg,#1b3d2d,#1a1a2e); border:1.5px solid #6bff6b; }
+        .player-name { font-size:13px; font-weight:bold; margin-bottom:2px; color:#e0e0e0; }
+        .ai .player-name { color:#ff6b6b; }
+        .player .player-name { color:#6bff6b; }
+        .hp { font-size:18px; margin:2px 0; letter-spacing:1px; }
+        .energy { font-size:13px; color:#ffd93d; margin:2px 0; }
+        .ai-status { font-size:10px; color:#ffa500; margin-top:1px; font-style:italic; }
         .battle-info {
-            text-align: center;
-            padding: 16px 12px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 14px;
-            margin: 10px 0;
-            min-height: 105px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border: 2px solid #ffd93d;
-            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.25);
+            text-align:center; padding:16px 12px; background:rgba(0,0,0,0.5);
+            border-radius:14px; margin:10px 0; min-height:105px; display:flex;
+            flex-direction:column; justify-content:center; align-items:center;
+            border:2px solid #ffd93d; box-shadow:0 4px 15px rgba(255,217,61,0.25);
         }
-        #message {
-            font-size: 15px;
-            color: #ffd93d;
-            line-height: 1.65;
-            white-space: pre-line;
-            font-weight: bold;
-        }
-        .action-compare {
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            text-shadow: 0 0 8px rgba(255, 217, 61, 0.5);
-        }
-        .action-name {
-            font-weight: 800;
-            font-size: 19px;
-            color: #ffffff;
-            text-shadow: 0 0 10px rgba(255, 217, 61, 0.7);
-        }
-        .result-line {
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .end-message {
-            font-size: 20px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-shadow: 0 0 15px rgba(255, 217, 61, 0.6);
-        }
-        .actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 10px;
-        }
+        #message { font-size:15px; color:#ffd93d; line-height:1.65; white-space:pre-line; font-weight:bold; }
+        .action-compare { font-size:18px; font-weight:800; letter-spacing:0.5px; text-shadow:0 0 8px rgba(255,217,61,0.5); }
+        .action-name { font-weight:800; font-size:19px; color:#ffffff; text-shadow:0 0 10px rgba(255,217,61,0.7); }
+        .result-line { font-size:16px; font-weight:700; letter-spacing:0.5px; }
+        .end-message { font-size:20px; font-weight:900; letter-spacing:1px; text-shadow:0 0 15px rgba(255,217,61,0.6); }
+        .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
         .actions button {
-            padding: 12px;
-            font-size: 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            touch-action: manipulation;
-            position: relative;
-            overflow: hidden;
+            padding:12px; font-size:14px; font-weight:bold; border:none; border-radius:12px;
+            background:linear-gradient(135deg,#667eea,#764ba2); color:white; cursor:pointer;
+            transition:all 0.3s; touch-action:manipulation; position:relative; overflow:hidden;
         }
-        .actions button:hover:not(:disabled) {
-            transform: scale(1.03);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-        .actions button:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-        .actions button small {
-            font-size: 10px;
-            opacity: 0.8;
-            display: block;
-            margin-top: 2px;
-        }
-        .actions button:last-child {
-            grid-column: span 2;
-        }
-        .actions button:disabled {
-            background: #2a2a3e;
-            color: #555;
-            cursor: not-allowed;
-            opacity: 0.35;
-            transform: none;
-            box-shadow: none;
-            filter: grayscale(100%);
-            border: 1px solid #333;
-        }
-        .actions button:disabled small {
-            opacity: 0.3;
-        }
-        .actions button:disabled::after {
-            content: attr(data-disabled-reason);
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 9px;
-            color: #ff6b6b;
-            white-space: nowrap;
-            opacity: 0.8;
-        }
-        .restart-btn {
-            width: 100%;
-            margin-top: 10px;
-            padding: 10px;
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            display: none;
-        }
-        .restart-btn:hover {
-            transform: scale(1.02);
-        }
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 8px;
-            padding: 6px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            font-size: 11px;
-            color: #e0e0e0;
-        }
+        .actions button:hover:not(:disabled) { transform:scale(1.03); box-shadow:0 5px 20px rgba(102,126,234,0.4); }
+        .actions button:active:not(:disabled) { transform:scale(0.95); }
+        .actions button small { font-size:10px; opacity:0.8; display:block; margin-top:2px; }
+        .actions button:last-child { grid-column:span 2; }
+        .actions button:disabled { background:#2a2a3e; color:#555; cursor:not-allowed; opacity:0.35; transform:none; box-shadow:none; filter:grayscale(100%); border:1px solid #333; }
+        .actions button:disabled small { opacity:0.3; }
+        .actions button:disabled::after { content:attr(data-disabled-reason); position:absolute; bottom:2px; left:50%; transform:translateX(-50%); font-size:9px; color:#ff6b6b; white-space:nowrap; opacity:0.8; }
+        .restart-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
+        .restart-btn:hover { transform:scale(1.02); }
+        .stats { display:flex; justify-content:space-around; margin-top:8px; padding:6px; background:rgba(0,0,0,0.2); border-radius:10px; font-size:11px; color:#e0e0e0; }
     </style>
 </head>
 <body>
@@ -376,9 +136,7 @@
             <div class="energy" id="aiEnergy">⚡ 能量：0</div>
             <div class="ai-status" id="aiStatus"></div>
         </div>
-        <div class="battle-info">
-            <div id="message">🎮 游戏开始！<br>选择你的行动</div>
-        </div>
+        <div class="battle-info"><div id="message">🎮 游戏开始！<br>选择你的行动</div></div>
         <div class="player-info player" id="playerInfo">
             <div class="player-name">😊 你</div>
             <div class="hp" id="playerHp">❤️❤️❤️❤️</div>
@@ -403,94 +161,55 @@
         let gameState = {
             player: { hp: 4, energy: 0, lastUsedBreak: false },
             ai: { hp: 4, energy: 0, lastUsedBreak: false },
-            round: 1,
-            gameOver: false,
-            isProcessing: false
+            round: 1, gameOver: false, isProcessing: false
         };
-        
         let difficulty = 'easy';
         let stats = { wins: 0, losses: 0, draws: 0 };
-        let playerHistory = [];
         let aiMemory = {
             playerPatterns: {},
-            successfulActions: {},
-            playerEnergyPref: {},
             lastPlayerActions: [],
         };
-        
         const MAX_ENERGY = 3;
-        
+
         const difficultyConfig = {
-            easy: { name: '简单', randomness: 0.7, aggression: 0.3, defense: 0.2, learning: false },
-            normal: { name: '普通', randomness: 0.3, aggression: 0.55, defense: 0.5, learning: false },
-            hard: { name: '困难', randomness: 0.1, aggression: 0.75, defense: 0.75, learning: false },
-            learning: { name: '学习', randomness: 0.05, aggression: 0.85, defense: 0.85, learning: true }
+            easy: { name: '简单' },
+            normal: { name: '普通' },
+            hard: { name: '困难' },
+            learning: { name: '学习' }
         };
-        
+
         function selectDifficulty(diff) {
             difficulty = diff;
-            document.querySelectorAll('.difficulty-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`[data-difficulty="${diff}"]`).classList.add('active');
-            const config = difficultyConfig[diff];
-            document.getElementById('aiStatus').textContent = `难度：${config.name}`;
-            if (diff === 'learning') {
-                document.getElementById('message').innerHTML = `🧠 学习模式已启动！<br>AI会分析你的行动模式<br>看看你能不能战胜它！`;
-            } else {
-                document.getElementById('message').innerHTML = `难度已切换为：${config.name}<br>选择你的行动`;
-            }
+            document.getElementById('aiStatus').textContent = `难度：${difficultyConfig[diff].name}`;
             if (diff === 'learning') resetLearning();
+            document.getElementById('message').innerHTML = `难度已切换为：${difficultyConfig[diff].name}<br>选择你的行动`;
         }
-        
+
         function resetLearning() {
-            aiMemory = { playerPatterns: {}, successfulActions: {}, playerEnergyPref: {}, lastPlayerActions: [] };
-            playerHistory = [];
+            aiMemory = { playerPatterns: {}, lastPlayerActions: [] };
         }
-        
+
         function toggleRules() {
-            const modal = document.getElementById('rulesModal');
-            modal.classList.toggle('show');
+            document.getElementById('rulesModal').classList.toggle('show');
         }
-        
+
         function updateButtonStates() {
-            const player = gameState.player;
+            const p = gameState.player;
             setButtonState('绷住', true, '');
-            if (player.lastUsedBreak) {
-                setButtonState('破绷', false, '上轮已用');
-            } else {
-                setButtonState('破绷', true, '');
-            }
-            if (player.energy < 2) {
-                setButtonState('绷绷炸弹', false, `需要2⚡`);
-            } else {
-                setButtonState('绷绷炸弹', true, '');
-            }
+            setButtonState('破绷', !p.lastUsedBreak, p.lastUsedBreak ? '上轮已用' : '');
+            setButtonState('绷绷炸弹', p.energy >= 2, p.energy < 2 ? '需要2⚡' : '');
             setButtonState('轻松绷住', true, '');
-            if (player.energy < 1) {
-                setButtonState('完美绷住', false, `需要1⚡`);
-            } else {
-                setButtonState('完美绷住', true, '');
-            }
+            setButtonState('完美绷住', p.energy >= 1, p.energy < 1 ? '需要1⚡' : '');
         }
-        
-        function setButtonState(actionName, enabled, reason) {
-            const btn = document.getElementById(`btn-${actionName}`);
-            if (btn) {
-                btn.disabled = !enabled;
-                if (!enabled && reason) {
-                    btn.setAttribute('data-disabled-reason', reason);
-                } else {
-                    btn.removeAttribute('data-disabled-reason');
-                }
-            }
+        function setButtonState(name, enabled, reason) {
+            const btn = document.getElementById(`btn-${name}`);
+            if (btn) { btn.disabled = !enabled; reason ? btn.setAttribute('data-disabled-reason', reason) : btn.removeAttribute('data-disabled-reason'); }
         }
-        
         function updateDisplay() {
-            const playerHp = '❤️'.repeat(gameState.player.hp) + '🖤'.repeat(4 - gameState.player.hp);
-            const aiHp = '❤️'.repeat(gameState.ai.hp) + '🖤'.repeat(4 - gameState.ai.hp);
-            document.getElementById('playerHp').textContent = playerHp;
-            document.getElementById('aiHp').textContent = aiHp;
+            document.getElementById('playerHp').textContent = '❤️'.repeat(gameState.player.hp) + '🖤'.repeat(4 - gameState.player.hp);
+            document.getElementById('aiHp').textContent = '❤️'.repeat(gameState.ai.hp) + '🖤'.repeat(4 - gameState.ai.hp);
             document.getElementById('playerEnergy').textContent = '⚡ 能量：' + gameState.player.energy;
             document.getElementById('aiEnergy').textContent = '⚡ 能量：' + gameState.ai.energy;
             document.getElementById('wins').textContent = stats.wins;
@@ -498,58 +217,44 @@
             document.getElementById('draws').textContent = stats.draws;
             updateButtonStates();
         }
-        
         function getValidAction(actor, action) {
             if (action === '破绷' && actor.lastUsedBreak) return '绷住';
             if (action === '绷绷炸弹' && actor.energy < 2) return '绷住';
             if (action === '完美绷住' && actor.energy < 1) return '绷住';
             return action;
         }
-        
-        function getDamage(action) {
-            if (action === '破绷') return 1;
-            if (action === '绷绷炸弹') return 3;
-            return 0;
-        }
-        
-        function applyDefense(damage, defenseAction) {
+        function getDamage(action) { return action === '破绷' ? 1 : action === '绷绷炸弹' ? 3 : 0; }
+        function applyDefense(damage, defAction) {
             if (damage === 0) return 0;
-            if (defenseAction === '完美绷住') return 0;
-            if (defenseAction === '轻松绷住' && damage === 1) return 0;
+            if (defAction === '完美绷住') return 0;
+            if (defAction === '轻松绷住' && damage === 1) return 0;
             return damage;
         }
-        
         function updateEnergy(actor, action) {
-            if (action === '绷住') {
-                actor.energy = Math.min(MAX_ENERGY, actor.energy + 1);
-            } else if (action === '绷绷炸弹') {
-                actor.energy = Math.max(0, actor.energy - 2);
-            } else if (action === '完美绷住') {
-                actor.energy = Math.max(0, actor.energy - 1);
-            }
+            if (action === '绷住') actor.energy = Math.min(MAX_ENERGY, actor.energy + 1);
+            else if (action === '绷绷炸弹') actor.energy = Math.max(0, actor.energy - 2);
+            else if (action === '完美绷住') actor.energy = Math.max(0, actor.energy - 1);
         }
-        
-        function recordPlayerAction(state, action) {
-            const key = `${state.player.hp}_${state.ai.hp}_${state.player.energy}_${state.ai.energy}`;
+
+        function recordPlayerAction(action) {
+            const p = gameState.player, a = gameState.ai;
+            const key = `${p.hp}_${a.hp}_${p.energy}_${a.energy}`;
             if (!aiMemory.playerPatterns[key]) aiMemory.playerPatterns[key] = {};
-            if (!aiMemory.playerPatterns[key][action]) aiMemory.playerPatterns[key][action] = 0;
-            aiMemory.playerPatterns[key][action]++;
+            aiMemory.playerPatterns[key][action] = (aiMemory.playerPatterns[key][action] || 0) + 1;
             aiMemory.lastPlayerActions.push(action);
             if (aiMemory.lastPlayerActions.length > 30) aiMemory.lastPlayerActions.shift();
         }
-        
-        function analyzePlayerPattern(state) {
-            const key = `${state.player.hp}_${state.ai.hp}_${state.player.energy}_${state.ai.energy}`;
+        function analyzePattern() {
+            const p = gameState.player, a = gameState.ai;
+            const key = `${p.hp}_${a.hp}_${p.energy}_${a.energy}`;
             const patterns = aiMemory.playerPatterns[key];
             if (!patterns || Object.keys(patterns).length === 0) return null;
-            let mostCommon = null;
-            let maxCount = 0;
-            for (const [action, count] of Object.entries(patterns)) {
-                if (count > maxCount) { maxCount = count; mostCommon = action; }
-            }
-            return { action: mostCommon, confidence: maxCount / Object.values(patterns).reduce((a, b) => a + b, 0) };
+            let best = null, bestCount = 0, total = 0;
+            for (const [act, cnt] of Object.entries(patterns)) { total += cnt; if (cnt > bestCount) { bestCount = cnt; best = act; } }
+            return { action: best, confidence: bestCount / total };
         }
-        
+
+        // ========== AI决策 ==========
         function aiDecide() {
             switch(difficulty) {
                 case 'easy': return aiDecideEasy();
@@ -559,45 +264,55 @@
                 default: return aiDecideNormal();
             }
         }
-        
+
         function aiDecideEasy() {
-            const actions = ['绷住', '破绷', '绷绷炸弹', '轻松绷住', '完美绷住'];
-            return actions[Math.floor(Math.random() * actions.length)];
+            const opts = ['绷住','破绷','绷绷炸弹','轻松绷住','完美绷住'];
+            return opts[Math.floor(Math.random() * opts.length)];
         }
-        
+
+        // 普通：半策略半随机
         function aiDecideNormal() {
-            const ai = gameState.ai;
-            const player = gameState.player;
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-            if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.7) return '绷绷炸弹';
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.5) return '完美绷住';
-            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) return '破绷';
-            if (ai.energy < 2 && ai.hp > 2) return '绷住';
+            const ai = gameState.ai, player = gameState.player;
+            // 必杀
+            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1 && Math.random() < 0.7) return '绷绷炸弹';
+            // 防守
+            if (player.energy >= 2 && ai.energy >= 1 && ai.hp <= 3 && Math.random() < 0.5) return '完美绷住';
+            // 攒能量
+            if (ai.energy < 2 && ai.hp > 2 && Math.random() < 0.6) return '绷住';
+            // 炸弹施压
             if (ai.energy >= 2 && Math.random() < 0.5) return '绷绷炸弹';
-            const options = ['绷住'];
-            if (!ai.lastUsedBreak) options.push('破绷');
-            if (ai.energy >= 2) options.push('绷绷炸弹');
-            if (ai.energy >= 1) options.push('完美绷住');
-            return options[Math.floor(Math.random() * options.length)];
+            // 破绷
+            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.4) return '破绷';
+            const opts = ['绷住']; if (!ai.lastUsedBreak) opts.push('破绷'); if (ai.energy >= 2) opts.push('绷绷炸弹'); if (ai.energy >= 1) opts.push('完美绷住');
+            return opts[Math.floor(Math.random() * opts.length)];
         }
-        
+
+        // 困难：接近最优
         function aiDecideHard() {
-            const ai = gameState.ai;
-            const player = gameState.player;
+            const ai = gameState.ai, player = gameState.player;
+            // 1. 必杀
             if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-            if (player.energy >= 2 && player.hp > ai.hp && ai.energy >= 1 && Math.random() < 0.8) return '完美绷住';
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.6) return '完美绷住';
-            if (!ai.lastUsedBreak && Math.random() < 0.6) return '破绷';
+            // 2. 生存防守
+            if (player.energy >= 2 && ai.hp <= 3 && ai.energy >= 1 && Math.random() < 0.85) return '完美绷住';
+            // 3. 防炸弹
+            if (player.energy >= 2 && ai.energy >= 1 && ai.hp <= 2 && Math.random() < 0.9) return '完美绷住';
+            // 4. 能量管理
             if (ai.energy < 2 && ai.hp > 2) return '绷住';
+            // 5. 满能量施压
             if (ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
-            const options = ['绷住', '破绷', '绷绷炸弹'];
-            return options[Math.floor(Math.random() * options.length)];
+            // 6. 安全破绷
+            if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.5) return '破绷';
+            // 7. 低血量拼死
+            if (ai.hp <= 2 && ai.energy >= 2) return '绷绷炸弹';
+            const opts = ['绷住','破绷','绷绷炸弹'];
+            return opts[Math.floor(Math.random() * opts.length)];
         }
-        
+
+        // 学习：困难基础上克制玩家
         function aiDecideLearning() {
-            const ai = gameState.ai;
-            const player = gameState.player;
-            const pattern = analyzePlayerPattern(gameState);
+            const ai = gameState.ai, player = gameState.player;
+            // 1. 分析玩家模式
+            const pattern = analyzePattern();
             if (pattern && pattern.confidence > 0.35) {
                 if (pattern.action === '绷绷炸弹' && ai.energy >= 1) return '完美绷住';
                 if (pattern.action === '破绷') return '轻松绷住';
@@ -605,111 +320,75 @@
                 if (pattern.action === '完美绷住' && ai.energy >= 2) return '绷住';
                 if (pattern.action === '轻松绷住' && ai.energy >= 2) return '绷绷炸弹';
             }
+            // 2. 必杀
             if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
+            // 3. 激进击杀
             if (player.hp <= 3 && ai.energy >= 2 && Math.random() < 0.9) return '绷绷炸弹';
-            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.7) return '完美绷住';
+            // 4. 防守
+            if (player.energy >= 2 && ai.energy >= 1 && Math.random() < 0.75) return '完美绷住';
+            // 5. 分析防御习惯
             if (aiMemory.lastPlayerActions.length > 8) {
-                const recentDefensive = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
-                if (recentDefensive > 4 && ai.energy >= 2) return '绷住';
-                if (recentDefensive <= 2 && ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
+                const defensive = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
+                if (defensive > 4 && ai.energy >= 2) return '绷住';
+                if (defensive <= 2 && ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
             }
+            // 6. 破绷骚扰
             if (!ai.lastUsedBreak && player.energy < 2 && Math.random() < 0.5) return '破绷';
+            // 7. 施压
             if (ai.energy >= 2 && Math.random() < 0.8) return '绷绷炸弹';
+            // 8. 攒能量
             if (ai.energy < 2) return '绷住';
             return '破绷';
         }
-        
+
         function playerAction(action) {
             if (gameState.gameOver || gameState.isProcessing) return;
-            if (!isActionAvailable(action)) return;
             gameState.isProcessing = true;
             disableAllButtons(true);
-            if (difficulty === 'learning') recordPlayerAction(gameState, action);
-            const playerAction = getValidAction(gameState.player, action);
-            const aiAction = getValidAction(gameState.ai, aiDecide());
-            let damageToAI = getDamage(playerAction);
-            let damageToPlayer = getDamage(aiAction);
-            damageToAI = applyDefense(damageToAI, aiAction);
-            damageToPlayer = applyDefense(damageToPlayer, playerAction);
-            gameState.ai.hp = Math.max(0, gameState.ai.hp - damageToAI);
-            gameState.player.hp = Math.max(0, gameState.player.hp - damageToPlayer);
-            updateEnergy(gameState.player, playerAction);
-            updateEnergy(gameState.ai, aiAction);
-            gameState.player.lastUsedBreak = (playerAction === '破绷');
-            gameState.ai.lastUsedBreak = (aiAction === '破绷');
-            
+            if (difficulty === 'learning') recordPlayerAction(action);
+            const pa = getValidAction(gameState.player, action);
+            const aa = getValidAction(gameState.ai, aiDecide());
+            let dmgToAI = applyDefense(getDamage(pa), aa);
+            let dmgToPlayer = applyDefense(getDamage(aa), pa);
+            gameState.ai.hp = Math.max(0, gameState.ai.hp - dmgToAI);
+            gameState.player.hp = Math.max(0, gameState.player.hp - dmgToPlayer);
+            updateEnergy(gameState.player, pa);
+            updateEnergy(gameState.ai, aa);
+            gameState.player.lastUsedBreak = (pa === '破绷');
+            gameState.ai.lastUsedBreak = (aa === '破绷');
             let msg = `第${gameState.round}回合<br>`;
-            msg += `<span class="action-compare">你「<span class="action-name">${playerAction}</span>」 vs AI「<span class="action-name">${aiAction}</span>」</span><br>`;
-            msg += `<span class="result-line">你受到${damageToPlayer}伤害，AI受到${damageToAI}伤害</span>`;
+            msg += `<span class="action-compare">你「<span class="action-name">${pa}</span>」 vs AI「<span class="action-name">${aa}</span>」</span><br>`;
+            msg += `<span class="result-line">你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害</span>`;
             if (difficulty === 'learning' && gameState.round % 3 === 0) msg += `<br>🧠 AI正在分析你的行动模式...`;
             document.getElementById('message').innerHTML = msg;
-            
             updateDisplay();
             gameState.round++;
             setTimeout(() => {
                 checkGameOver();
                 gameState.isProcessing = false;
-                if (!gameState.gameOver) {
-                    disableAllButtons(false);
-                    updateButtonStates();
-                }
+                if (!gameState.gameOver) { disableAllButtons(false); updateButtonStates(); }
             }, 1000);
         }
-        
-        function isActionAvailable(action) {
-            const player = gameState.player;
-            if (action === '破绷' && player.lastUsedBreak) return false;
-            if (action === '绷绷炸弹' && player.energy < 2) return false;
-            if (action === '完美绷住' && player.energy < 1) return false;
-            return true;
-        }
-        
+
         function disableAllButtons(disabled) {
-            const buttons = document.querySelectorAll('.actions button');
-            buttons.forEach(btn => btn.disabled = disabled);
+            document.querySelectorAll('.actions button').forEach(btn => btn.disabled = disabled);
             if (!disabled) updateButtonStates();
         }
-        
         function checkGameOver() {
-            if (gameState.player.hp === 0 && gameState.ai.hp === 0) {
-                document.getElementById('message').innerHTML = '<span class="end-message">🤝 平局！</span>';
-                stats.draws++;
-                endGame();
-            } else if (gameState.player.hp === 0) {
-                document.getElementById('message').innerHTML = '<span class="end-message">😢 你输了！AI获胜！</span>';
-                stats.losses++;
-                endGame();
-            } else if (gameState.ai.hp === 0) {
-                document.getElementById('message').innerHTML = '<span class="end-message">🎉 恭喜！你赢了！</span>';
-                stats.wins++;
-                endGame();
-            }
+            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats.draws++; document.getElementById('message').innerHTML = '<span class="end-message">🤝 平局！</span>'; endGame(); }
+            else if (gameState.player.hp === 0) { stats.losses++; document.getElementById('message').innerHTML = '<span class="end-message">😢 你输了！AI获胜！</span>'; endGame(); }
+            else if (gameState.ai.hp === 0) { stats.wins++; document.getElementById('message').innerHTML = '<span class="end-message">🎉 恭喜！你赢了！</span>'; endGame(); }
             updateDisplay();
         }
-        
-        function endGame() {
-            gameState.gameOver = true;
-            disableAllButtons(true);
-            document.getElementById('restartBtn').style.display = 'block';
-        }
-        
+        function endGame() { gameState.gameOver = true; disableAllButtons(true); document.getElementById('restartBtn').style.display = 'block'; }
         function restartGame() {
-            gameState = {
-                player: { hp: 4, energy: 0, lastUsedBreak: false },
-                ai: { hp: 4, energy: 0, lastUsedBreak: false },
-                round: 1,
-                gameOver: false,
-                isProcessing: false
-            };
+            gameState = { player:{hp:4,energy:0,lastUsedBreak:false}, ai:{hp:4,energy:0,lastUsedBreak:false}, round:1, gameOver:false, isProcessing:false };
             updateDisplay();
             document.getElementById('message').innerHTML = '🎮 新游戏开始！<br>选择你的行动';
             document.getElementById('restartBtn').style.display = 'none';
-            disableAllButtons(false);
-            updateButtonStates();
+            disableAllButtons(false); updateButtonStates();
         }
-        
-        updateDisplay();
-        selectDifficulty('easy');
+        updateDisplay(); selectDifficulty('easy');
     </script>
 </body>
 </html>
