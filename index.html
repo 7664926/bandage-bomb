@@ -402,6 +402,7 @@
             if (ai.energy < 2) return '绷住';
             return '绷住';
         }
+
         function playerAction(action) {
             sendStats(action);
             if (gameState.gameOver || gameState.isProcessing) return;
@@ -410,21 +411,31 @@
             if (difficulty === 'learning') recordPlayerAction(action);
             const pa = getValidAction(gameState.player, action);
             const aa = getValidAction(gameState.ai, aiDecide());
+            const playerHpBefore = gameState.player.hp;
+            const aiHpBefore = gameState.ai.hp;
+
             let dmgToAI = 0, dmgToPlayer = 0, healToPlayer = 0, healToAI = 0, egP = 0, egA = 0;
             dmgToAI = getDamage(pa); dmgToPlayer = getDamage(aa);
             if (aa === '完美绷住' || (aa === '轻松绷住' && pa === '破绷')) dmgToAI = 0;
             if (pa === '完美绷住' || (pa === '轻松绷住' && aa === '破绷')) dmgToPlayer = 0;
             let ultBlockedP = false, ultBlockedAI = false;
             if (pa === '强绷') { if (aa === '轻松绷住') ultBlockedP = true; else egP = 2; }
-            if (pa === '绷带') { if (aa === '破绷') ultBlockedP = true; else healToPlayer = 2; }
+            if (pa === '绷带') {
+                if (aa === '破绷') ultBlockedP = true;
+                else healToPlayer = Math.min(2, MAX_HP - playerHpBefore);
+            }
             if (aa === '强绷') { if (pa === '轻松绷住') ultBlockedAI = true; else egA = 2; }
-            if (aa === '绷带') { if (pa === '破绷') ultBlockedAI = true; else healToAI = 2; }
+            if (aa === '绷带') {
+                if (pa === '破绷') ultBlockedAI = true;
+                else healToAI = Math.min(2, MAX_HP - aiHpBefore);
+            }
             if (pa === '绷住') egP = 1;
             if (pa === '绷绷炸弹') egP = -2;
             if (pa === '完美绷住') egP = -1;
             if (aa === '绷住') egA = 1;
             if (aa === '绷绷炸弹') egA = -2;
             if (aa === '完美绷住') egA = -1;
+
             gameState.player.hp += healToPlayer - dmgToPlayer;
             gameState.ai.hp += healToAI - dmgToAI;
             gameState.player.hp = Math.max(0, Math.min(MAX_HP, gameState.player.hp));
@@ -435,6 +446,7 @@
             if (aa === '强绷' || aa === '绷带') gameState.ai.ultUsed = true;
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
+
             let msg = `第${gameState.round}回合<br>你「<span class="action-highlight">${pa}</span>」 vs AI「<span class="action-highlight">${aa}</span>」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
             if (healToPlayer > 0 || healToAI > 0) {
                 if (healToPlayer > 0 && healToAI > 0) msg += `<br>你回复${healToPlayer}血，AI回复${healToAI}血`;
@@ -452,6 +464,7 @@
                 if (!gameState.gameOver) { disableAllButtons(false); updateButtonStates(); }
             }, 1000);
         }
+
         function disableAllButtons(disabled) {
             document.querySelectorAll('#actions button').forEach(btn => btn.disabled = disabled);
             if (!disabled) updateButtonStates();
@@ -532,7 +545,7 @@
 
         function startPolling() {
             if (onlineState.polling) clearInterval(onlineState.polling);
-            onlineState.polling = setInterval(pollRoom, 2000);
+            onlineState.polling = setInterval(pollRoom, 1000);
         }
 
         function updateOnlineButtonStates() {
@@ -575,7 +588,6 @@
 
             if (myActions.length === 0) {
                 onlineState.myActionSubmitted = false;
-
                 if (room.status === 'playing' && !onlineState.gameOver) {
                     if (onlineState.round === 1) {
                         document.getElementById('onlineMessage').textContent = '选择你的行动';
@@ -621,8 +633,14 @@
         }
 
         async function resolveOnlineRound(p1A, p2A) {
+            const myHpBefore = onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp;
+            const oppHpBefore = onlineState.myPlayer === 'player1' ? onlineState.oppHp : onlineState.myHp;
+
             const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy, ultUsed: onlineState.myPlayer === 'player1' ? onlineState.myUltUsed : onlineState.oppUltUsed };
             const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy, ultUsed: onlineState.myPlayer === 'player2' ? onlineState.myUltUsed : onlineState.oppUltUsed };
+
+            const p1HpBefore = p1.hp;
+            const p2HpBefore = p2.hp;
 
             let dmgToP1 = getDamage(p2A), dmgToP2 = getDamage(p1A);
             if (p1A === '完美绷住' || (p1A === '轻松绷住' && p2A === '破绷')) dmgToP1 = 0;
@@ -632,9 +650,9 @@
             let ultBlockedP1 = false, ultBlockedP2 = false;
 
             if (p1A === '强绷') { if (p2A === '轻松绷住') ultBlockedP1 = true; else egP1 = 2; }
-            if (p1A === '绷带') { if (p2A === '破绷') ultBlockedP1 = true; else healToP1 = 2; }
+            if (p1A === '绷带') { if (p2A === '破绷') ultBlockedP1 = true; else healToP1 = Math.min(2, MAX_HP - p1HpBefore); }
             if (p2A === '强绷') { if (p1A === '轻松绷住') ultBlockedP2 = true; else egP2 = 2; }
-            if (p2A === '绷带') { if (p1A === '破绷') ultBlockedP2 = true; else healToP2 = 2; }
+            if (p2A === '绷带') { if (p1A === '破绷') ultBlockedP2 = true; else healToP2 = Math.min(2, MAX_HP - p2HpBefore); }
 
             if (p1A === '绷住') egP1 = 1;
             if (p1A === '绷绷炸弹') egP1 = -2;
