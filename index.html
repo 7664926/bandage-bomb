@@ -78,7 +78,7 @@
             flex-direction:column; justify-content:center; align-items:center;
             border:2px solid #ffd93d; box-shadow:0 4px 15px rgba(255,217,61,0.25);
         }
-        #message { font-size:15px; color:#ffd93d; line-height:1.65; white-space:pre-line; font-weight:bold; }
+        #message, #onlineMessage { font-size:15px; color:#ffd93d; line-height:1.65; white-space:pre-line; font-weight:bold; }
         .action-compare { font-size:18px; font-weight:800; letter-spacing:0.5px; text-shadow:0 0 8px rgba(255,217,61,0.5); }
         .action-name { font-weight:800; font-size:19px; color:#ffffff; text-shadow:0 0 10px rgba(255,217,61,0.7); }
         .result-line { font-size:16px; font-weight:700; letter-spacing:0.5px; }
@@ -110,22 +110,27 @@
         .restart-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
         .stats { display:flex; justify-content:space-around; margin-top:8px; padding:6px; background:rgba(0,0,0,0.2); border-radius:10px; font-size:11px; color:#e0e0e0; }
 
-        /* 联机相关样式 */
+        /* 联机样式 */
         .online-panel { display:none; }
         .online-panel.active { display:block; }
         .single-panel.active { display:block; }
         .single-panel { display:none; }
+        .room-btn-row { display:flex; gap:8px; margin:5px 0; }
+        .room-btn {
+            flex:1; padding:12px; font-size:14px; font-weight:bold; border:none;
+            border-radius:10px; cursor:pointer;
+        }
+        .room-btn.create { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
+        .room-btn.join { background:linear-gradient(135deg,#f093fb,#f5576c); color:white; }
         .room-input {
             width:100%; padding:10px; font-size:16px; border:2px solid #4a4a8a;
             border-radius:10px; background:#1a1a2e; color:#ffd93d; text-align:center;
             margin:5px 0; outline:none;
         }
-        .room-btn {
-            width:48%; padding:12px; font-size:14px; font-weight:bold; border:none;
-            border-radius:10px; cursor:pointer; margin:5px 1%;
+        .leave-btn {
+            width:100%; padding:8px; margin-bottom:10px; background:#ff4444; color:white;
+            border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold;
         }
-        .room-btn.create { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
-        .room-btn.join { background:linear-gradient(135deg,#f093fb,#f5576c); color:white; }
     </style>
 </head>
 <body>
@@ -183,15 +188,20 @@
 
         <!-- ========== 联机模式 ========== -->
         <div class="online-panel" id="onlinePanel">
+            <!-- 联机菜单 -->
             <div id="onlineMenu">
-                <button class="room-btn create" onclick="createRoom()">创建房间</button>
-                <button class="room-btn join" onclick="showJoinInput()">加入房间</button>
+                <div class="room-btn-row">
+                    <button class="room-btn create" onclick="createRoom()">➕ 创建房间</button>
+                    <button class="room-btn join" onclick="showJoinInput()">🔑 加入房间</button>
+                </div>
                 <div id="joinInput" style="display:none;">
-                    <input class="room-input" id="roomCodeInput" maxlength="6" placeholder="输入6位房间号">
-                    <button class="room-btn join" onclick="joinRoom()">加入</button>
+                    <input class="room-input" id="roomCodeInput" maxlength="6" placeholder="输入6位房间号" inputmode="numeric">
+                    <button class="room-btn join" onclick="joinRoom()">✅ 加入</button>
                 </div>
             </div>
+            <!-- 联机游戏界面 -->
             <div id="onlineGame" style="display:none;">
+                <button class="leave-btn" onclick="leaveRoom()">🚪 退出房间</button>
                 <div class="player-info opponent">
                     <div class="player-name">👤 对手</div>
                     <div class="hp" id="onlineOpponentHp">❤️❤️❤️❤️</div>
@@ -220,7 +230,7 @@
         <!-- ========== 联机模式结束 ========== -->
     </div>
 
-    <!-- 规则弹窗（共用） -->
+    <!-- 规则弹窗 -->
     <div class="rules-modal" id="rulesModal">
         <div class="rules-content">
             <h3>📖 绷绷炸弹游戏规则</h3>
@@ -275,7 +285,7 @@
         function toggleRules() { document.getElementById('rulesModal').classList.toggle('show'); }
         // ========== 模式切换结束 ==========
 
-        // ========== 单机模式代码 ==========
+        // ========== 单机模式 ==========
         function sendStats(action) {
             fetch(`${SUPABASE_URL}/rest/v1/action_record`, {
                 method: 'POST',
@@ -507,25 +517,15 @@
             disableAllButtons(false); updateButtonStates();
         }
         updateDisplay(); selectDifficulty('easy');
-        // ========== 单机模式代码结束 ==========
+        // ========== 单机模式结束 ==========
 
-        // ========== 联机模式代码 ==========
+        // ========== 联机模式 ==========
         let onlineState = {
-            roomCode: null,
-            myPlayer: null, // 'player1' 或 'player2'
-            myAction: null,
-            opponentAction: null,
-            round: 1,
-            myHp: 4,
-            oppHp: 4,
-            myEnergy: 0,
-            oppEnergy: 0,
-            myUltUsed: false,
-            oppUltUsed: false,
-            myBreakCd: false,
-            oppBreakCd: false,
-            gameOver: false,
-            polling: null
+            roomCode: null, myPlayer: null, round: 1,
+            myHp: 4, oppHp: 4, myEnergy: 0, oppEnergy: 0,
+            myUltUsed: false, oppUltUsed: false,
+            myBreakCd: false, oppBreakCd: false,
+            gameOver: false, polling: null
         };
 
         function generateRoomCode() {
@@ -543,8 +543,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({
-                    room_code: code,
-                    status: 'waiting',
+                    room_code: code, status: 'waiting',
                     player1_hp: 4, player2_hp: 4,
                     player1_energy: 0, player2_energy: 0,
                     player1_ult_used: false, player2_ult_used: false,
@@ -557,8 +556,10 @@
                 onlineState.myPlayer = 'player1';
                 document.getElementById('onlineMenu').style.display = 'none';
                 document.getElementById('onlineGame').style.display = 'block';
-                document.getElementById('onlineMessage').textContent = `房间号：${code}\n等待对手加入...`;
+                document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<b style="font-size:24px;">${code}</b><br>等待对手加入...`;
                 startPolling();
+            } else {
+                alert('创建房间失败，请重试');
             }
         }
 
@@ -588,11 +589,27 @@
             });
             document.getElementById('onlineMenu').style.display = 'none';
             document.getElementById('onlineGame').style.display = 'block';
-            document.getElementById('onlineMessage').textContent = '游戏开始！选择你的行动';
+            document.getElementById('onlineMessage').textContent = '🎮 游戏开始！选择你的行动';
             startPolling();
         }
 
+        function leaveRoom() {
+            if (onlineState.polling) clearInterval(onlineState.polling);
+            if (onlineState.roomCode) {
+                fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
+            }
+            onlineState = { roomCode: null, myPlayer: null, round: 1, myHp: 4, oppHp: 4, myEnergy: 0, oppEnergy: 0, myUltUsed: false, oppUltUsed: false, myBreakCd: false, oppBreakCd: false, gameOver: false, polling: null };
+            document.getElementById('onlineGame').style.display = 'none';
+            document.getElementById('onlineMenu').style.display = 'block';
+            document.getElementById('joinInput').style.display = 'none';
+            document.getElementById('roomCodeInput').value = '';
+        }
+
         function startPolling() {
+            if (onlineState.polling) clearInterval(onlineState.polling);
             onlineState.polling = setInterval(pollRoom, 2000);
         }
 
@@ -601,35 +618,28 @@
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
             const data = await res.json();
-            if (data.length === 0) return;
+            if (data.length === 0) { leaveRoom(); return; }
             const room = data[0];
             
-            if (room.status === 'waiting') {
-                document.getElementById('onlineMessage').textContent = `房间号：${onlineState.roomCode}\n等待对手加入...`;
-                return;
-            }
+            if (room.status === 'waiting') return;
             
-            // 更新显示
             onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
             onlineState.oppHp = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
             onlineState.myEnergy = onlineState.myPlayer === 'player1' ? room.player1_energy : room.player2_energy;
             onlineState.oppEnergy = onlineState.myPlayer === 'player1' ? room.player2_energy : room.player1_energy;
-            onlineState.myUltUsed = onlineState.myPlayer === 'player1' ? room.player1_ult_used : room.player2_ult_used;
-            onlineState.oppUltUsed = onlineState.myPlayer === 'player1' ? room.player2_ult_used : room.player1_ult_used;
             onlineState.round = room.round;
             
             updateOnlineDisplay();
             
-            // 查询双方行动
             const actionsRes = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}`, {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
             const actions = await actionsRes.json();
             
-            if (actions.length >= 2) {
+            if (actions.length >= 2 && !onlineState.gameOver) {
                 const p1Action = actions.find(a => a.player === 'player1');
                 const p2Action = actions.find(a => a.player === 'player2');
-                if (p1Action && p2Action && !onlineState.gameOver) {
+                if (p1Action && p2Action) {
                     resolveOnlineRound(p1Action.action, p2Action.action);
                 }
             }
@@ -652,21 +662,17 @@
                     round: onlineState.round
                 })
             });
-            document.getElementById('onlineMessage').textContent = '已出招，等待对手...';
+            document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
             document.querySelectorAll('#onlineActions button').forEach(btn => btn.disabled = true);
         }
 
         function resolveOnlineRound(p1Action, p2Action) {
+            // 简化结算
             const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp,
-                         energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy,
-                         ultUsed: onlineState.myPlayer === 'player1' ? onlineState.myUltUsed : onlineState.oppUltUsed,
-                         lastUsedBreak: onlineState.myPlayer === 'player1' ? onlineState.myBreakCd : onlineState.oppBreakCd };
+                         energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy };
             const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp,
-                         energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy,
-                         ultUsed: onlineState.myPlayer === 'player2' ? onlineState.myUltUsed : onlineState.oppUltUsed,
-                         lastUsedBreak: onlineState.myPlayer === 'player2' ? onlineState.myBreakCd : onlineState.oppBreakCd };
+                         energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy };
             
-            // 简化结算（完整逻辑同单机版）
             let dmgToP1 = getDamage(p2Action);
             let dmgToP2 = getDamage(p1Action);
             if (p1Action === '完美绷住' || (p1Action === '轻松绷住' && p2Action === '破绷')) dmgToP1 = 0;
@@ -715,7 +721,7 @@
             document.getElementById('onlinePlayerEnergy').textContent = '⚡ 能量：' + onlineState.myEnergy;
             document.getElementById('onlineOpponentEnergy').textContent = '⚡ 能量：' + onlineState.oppEnergy;
         }
-        // ========== 联机模式代码结束 ==========
+        // ========== 联机模式结束 ==========
     </script>
 </body>
 </html>
