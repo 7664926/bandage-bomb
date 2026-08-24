@@ -127,6 +127,8 @@
             border-radius:10px; background:#1a1a2e; color:#ffd93d; text-align:center;
             margin:5px 0; outline:none;
         }
+        .confirm-btn-row { display:flex; justify-content:center; }
+        .confirm-btn-row .room-btn { width:60%; flex:none; }
         .leave-btn {
             width:100%; padding:8px; margin-bottom:10px; background:#ff4444; color:white;
             border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold;
@@ -137,7 +139,6 @@
     <div class="game-container">
         <div class="game-title">⚡ 绷绷炸弹 ⚡</div>
         
-        <!-- 模式切换 -->
         <div class="mode-selector">
             <button class="mode-btn active" id="modeSingleBtn" onclick="switchMode('single')">🤖 单机</button>
             <button class="mode-btn" id="modeOnlineBtn" onclick="switchMode('online')">🌐 联机</button>
@@ -145,7 +146,7 @@
         
         <button class="rules-toggle-btn" onclick="toggleRules()">📖 查看游戏规则</button>
 
-        <!-- ========== 单机模式 ========== -->
+        <!-- 单机模式 -->
         <div class="single-panel active" id="singlePanel">
             <div class="difficulty-selector">
                 <button class="difficulty-btn active" data-difficulty="easy" onclick="selectDifficulty('easy')">😊 简单</button>
@@ -184,11 +185,9 @@
                 <span>🤝 平: <span id="draws">0</span></span>
             </div>
         </div>
-        <!-- ========== 单机模式结束 ========== -->
 
-        <!-- ========== 联机模式 ========== -->
+        <!-- 联机模式 -->
         <div class="online-panel" id="onlinePanel">
-            <!-- 联机菜单 -->
             <div id="onlineMenu">
                 <div class="room-btn-row">
                     <button class="room-btn create" onclick="createRoom()">➕ 创建房间</button>
@@ -196,10 +195,11 @@
                 </div>
                 <div id="joinInput" style="display:none;">
                     <input class="room-input" id="roomCodeInput" maxlength="6" placeholder="输入6位房间号" inputmode="numeric">
-                    <button class="room-btn join" onclick="joinRoom()">✅ 加入</button>
+                    <div class="confirm-btn-row">
+                        <button class="room-btn join" onclick="joinRoom()">✅ 加入</button>
+                    </div>
                 </div>
             </div>
-            <!-- 联机游戏界面 -->
             <div id="onlineGame" style="display:none;">
                 <button class="leave-btn" onclick="leaveRoom()">🚪 退出房间</button>
                 <div class="player-info opponent">
@@ -227,7 +227,6 @@
                 </div>
             </div>
         </div>
-        <!-- ========== 联机模式结束 ========== -->
     </div>
 
     <!-- 规则弹窗 -->
@@ -621,6 +620,20 @@
             if (data.length === 0) { leaveRoom(); return; }
             const room = data[0];
             
+            // ========== 空闲房间5分钟自动解散 ==========
+            const createdTime = new Date(room.created_at).getTime();
+            const now = Date.now();
+            if (room.status === 'waiting' && (now - createdTime) > 300000) {
+                await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
+                leaveRoom();
+                alert('房间已超时解散，请重新创建');
+                return;
+            }
+            // ========== 解散结束 ==========
+            
             if (room.status === 'waiting') return;
             
             onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
@@ -667,7 +680,6 @@
         }
 
         function resolveOnlineRound(p1Action, p2Action) {
-            // 简化结算
             const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp,
                          energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy };
             const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp,
