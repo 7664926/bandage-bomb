@@ -208,15 +208,26 @@
         </div>
     </div>
 
+    <!-- 规则弹窗：完整版，不再删减 -->
     <div class="rules-modal" id="rulesModal">
         <div class="rules-content">
             <h3>📖 绷绷炸弹游戏规则</h3>
             <h4>🎯 游戏目标</h4>
             <p>将对方生命值降至0或以下即可获胜！双方初始各有4点❤️</p>
             <h4>⚡ 能量系统</h4>
-            <ul><li>初始能量为0，上限3</li><li>"绷住"+1能量</li><li>"绷绷炸弹"-2能量</li><li>"完美绷住"-1能量</li></ul>
+            <ul>
+                <li>初始能量为0，上限3</li>
+                <li>使用"绷住"可获得1点能量</li>
+                <li>使用"绷绷炸弹"消耗2点能量</li>
+                <li>使用"完美绷住"消耗1点能量</li>
+            </ul>
             <h4>🌟 限定技（全局仅一次）</h4>
-            <ul><li>💪 强绷：回2能量（被"轻松绷住"克制）</li><li>🩹 绷带：回2生命（被"破绷"克制）</li><li>被克制时大招无效，对方行动照常</li><li>伤害和回血同时结算</li></ul>
+            <ul>
+                <li>💪 <b>强绷</b>：回复2点能量（被"轻松绷住"克制）</li>
+                <li>🩹 <b>绷带</b>：回复2点生命（被"破绷"克制）</li>
+                <li>被克制时：大招效果无效，但对方行动照常结算</li>
+                <li>伤害和回血同时结算后再计算最终血量</li>
+            </ul>
             <h4>📋 行动列表</h4>
             <table class="action-table">
                 <tr><th>行动</th><th>能量</th><th>伤害</th><th>防御</th></tr>
@@ -226,6 +237,12 @@
                 <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷/强绷</td></tr>
                 <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切</td></tr>
             </table>
+            <h4>⚠️ 重要规则</h4>
+            <ul>
+                <li>破绷不能连续两轮使用</li>
+                <li>伤害和回血同时计算，不会溢出</li>
+                <li>灰色按钮表示当前不可用</li>
+            </ul>
             <button class="close-rules-btn" onclick="toggleRules()">✅ 我知道了</button>
         </div>
     </div>
@@ -258,6 +275,7 @@
         let stats = { wins:0, losses:0, draws:0 };
         let aiMemory = { playerPatterns:{}, lastPlayerActions:[] };
         const difficultyConfig = { easy:{name:'简单'}, normal:{name:'普通'}, hard:{name:'困难'}, learning:{name:'学习'} };
+
         function selectDifficulty(diff) {
             difficulty = diff;
             document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
@@ -529,7 +547,6 @@
                 alert('房间已超时解散');
                 return;
             }
-            
             onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
             onlineState.oppHp = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
             onlineState.myEnergy = onlineState.myPlayer === 'player1' ? room.player1_energy : room.player2_energy;
@@ -538,7 +555,6 @@
             onlineState.oppUltUsed = onlineState.myPlayer === 'player1' ? room.player2_ult_used : room.player1_ult_used;
             onlineState.myBreakCd = onlineState.myPlayer === 'player1' ? room.player1_break_cd : room.player2_break_cd;
             onlineState.round = room.round;
-            
             const myActionsRes = await fetch(
                 `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`,
                 { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
@@ -559,15 +575,12 @@
                 }
             }
             updateOnlineButtonStates();
-            
             updateOnlineDisplay();
-            
             const actionsRes = await fetch(
                 `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}`,
                 { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
             );
             const actions = await actionsRes.json();
-            
             if (actions.length >= 2 && !onlineState.gameOver) {
                 const p1A = actions.find(a => a.player === 'player1');
                 const p2A = actions.find(a => a.player === 'player2');
@@ -590,26 +603,21 @@
         async function resolveOnlineRound(p1A, p2A) {
             const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy, ultUsed: onlineState.myPlayer === 'player1' ? onlineState.myUltUsed : onlineState.oppUltUsed };
             const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy, ultUsed: onlineState.myPlayer === 'player2' ? onlineState.myUltUsed : onlineState.oppUltUsed };
-            
             let dmgToP1 = getDamage(p2A), dmgToP2 = getDamage(p1A);
             if (p1A === '完美绷住' || (p1A === '轻松绷住' && p2A === '破绷')) dmgToP1 = 0;
             if (p2A === '完美绷住' || (p2A === '轻松绷住' && p1A === '破绷')) dmgToP2 = 0;
-            
             let healToP1 = 0, healToP2 = 0, egP1 = 0, egP2 = 0;
             let ultBlockedP1 = false, ultBlockedP2 = false;
-            
             if (p1A === '强绷') { if (p2A === '轻松绷住') ultBlockedP1 = true; else egP1 = 2; }
             if (p1A === '绷带') { if (p2A === '破绷') ultBlockedP1 = true; else healToP1 = 2; }
             if (p2A === '强绷') { if (p1A === '轻松绷住') ultBlockedP2 = true; else egP2 = 2; }
             if (p2A === '绷带') { if (p1A === '破绷') ultBlockedP2 = true; else healToP2 = 2; }
-            
             if (p1A === '绷住') egP1 = 1;
             if (p1A === '绷绷炸弹') egP1 = -2;
             if (p1A === '完美绷住') egP1 = -1;
             if (p2A === '绷住') egP2 = 1;
             if (p2A === '绷绷炸弹') egP2 = -2;
             if (p2A === '完美绷住') egP2 = -1;
-            
             p1.hp += healToP1 - dmgToP1;
             p2.hp += healToP2 - dmgToP2;
             p1.hp = Math.max(0, Math.min(MAX_HP, p1.hp));
@@ -618,7 +626,6 @@
             p2.energy = Math.max(0, Math.min(MAX_ENERGY, p2.energy + egP2));
             if (p1A === '强绷' || p1A === '绷带') p1.ultUsed = true;
             if (p2A === '强绷' || p2A === '绷带') p2.ultUsed = true;
-            
             onlineState.myHp = onlineState.myPlayer === 'player1' ? p1.hp : p2.hp;
             onlineState.oppHp = onlineState.myPlayer === 'player1' ? p2.hp : p1.hp;
             onlineState.myEnergy = onlineState.myPlayer === 'player1' ? p1.energy : p2.energy;
@@ -629,7 +636,6 @@
             onlineState.oppBreakCd = onlineState.myPlayer === 'player1' ? (p2A === '破绷') : (p1A === '破绷');
             onlineState.round++;
             onlineState.myActionSubmitted = false;
-            
             const p1Hp = onlineState.myPlayer === 'player1' ? p1.hp : p2.hp;
             const p2Hp = onlineState.myPlayer === 'player1' ? p2.hp : p1.hp;
             const p1Energy = onlineState.myPlayer === 'player1' ? p1.energy : p2.energy;
@@ -638,7 +644,6 @@
             const p2Ult = onlineState.myPlayer === 'player1' ? p2.ultUsed : p1.ultUsed;
             const p1Break = onlineState.myPlayer === 'player1' ? (p1A === '破绷') : (p2A === '破绷');
             const p2Break = onlineState.myPlayer === 'player1' ? (p2A === '破绷') : (p1A === '破绷');
-            
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
                 method: 'PATCH',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -650,17 +655,14 @@
                     round: onlineState.round
                 })
             });
-            
             updateOnlineDisplay();
             updateOnlineButtonStates();
-            
             const myAction = onlineState.myPlayer === 'player1' ? p1A : p2A;
             const oppAction = onlineState.myPlayer === 'player1' ? p2A : p1A;
             const myDmg = onlineState.myPlayer === 'player1' ? dmgToP1 : dmgToP2;
             const oppDmg = onlineState.myPlayer === 'player1' ? dmgToP2 : dmgToP1;
             const myHeal = onlineState.myPlayer === 'player1' ? healToP1 : healToP2;
             const oppHeal = onlineState.myPlayer === 'player1' ? healToP2 : healToP1;
-            
             let msg = `上回合：你「${myAction}」 vs 对手「${oppAction}」<br>`;
             msg += `你受到${myDmg}伤害，对手受到${oppDmg}伤害`;
             if (myHeal > 0 || oppHeal > 0) {
@@ -670,17 +672,9 @@
             }
             if ((onlineState.myPlayer === 'player1' && ultBlockedP1) || (onlineState.myPlayer === 'player2' && ultBlockedP2)) msg += `<br>💥 你的大招被克制！`;
             if ((onlineState.myPlayer === 'player1' && ultBlockedP2) || (onlineState.myPlayer === 'player2' && ultBlockedP1)) msg += `<br>💥 对手的大招被克制！`;
-            
-            if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
-                msg += `<br>🤝 平局！`;
-                onlineState.gameOver = true;
-            } else if (onlineState.myHp === 0) {
-                msg += `<br>😢 你输了！`;
-                onlineState.gameOver = true;
-            } else if (onlineState.oppHp === 0) {
-                msg += `<br>🎉 你赢了！`;
-                onlineState.gameOver = true;
-            }
+            if (onlineState.myHp === 0 && onlineState.oppHp === 0) { msg += `<br>🤝 平局！`; onlineState.gameOver = true; }
+            else if (onlineState.myHp === 0) { msg += `<br>😢 你输了！`; onlineState.gameOver = true; }
+            else if (onlineState.oppHp === 0) { msg += `<br>🎉 你赢了！`; onlineState.gameOver = true; }
             document.getElementById('onlineMessage').innerHTML = msg;
         }
         function updateOnlineDisplay() {
