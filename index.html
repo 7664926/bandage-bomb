@@ -72,6 +72,7 @@
         .action-name { font-weight:800; font-size:19px; color:#ffffff; text-shadow:0 0 10px rgba(255,217,61,0.7); }
         .result-line { font-size:16px; font-weight:700; letter-spacing:0.5px; }
         .end-message { font-size:20px; font-weight:900; letter-spacing:1px; text-shadow:0 0 15px rgba(255,217,61,0.6); }
+
         .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
         .actions button {
             padding:12px; font-size:14px; font-weight:bold; border:none; border-radius:12px;
@@ -81,11 +82,14 @@
         .actions button:hover:not(:disabled) { transform:scale(1.03); box-shadow:0 5px 20px rgba(102,126,234,0.4); }
         .actions button:active:not(:disabled) { transform:scale(0.95); }
         .actions button small { font-size:10px; opacity:0.8; display:block; margin-top:2px; }
-        .actions button:last-child { grid-column:span 2; }
         .actions button:disabled { background:#2a2a3e; color:#555; cursor:not-allowed; opacity:0.35; transform:none; box-shadow:none; filter:grayscale(100%); border:1px solid #333; }
         .actions button:disabled small { opacity:0.3; }
         .actions button:disabled::after { content:attr(data-disabled-reason); position:absolute; bottom:2px; left:50%; transform:translateX(-50%); font-size:9px; color:#ff6b6b; white-space:nowrap; opacity:0.8; }
 
+        /* 完美绷住：占满整行（长条） */
+        #btn-完美绷住 { grid-column: span 2; }
+
+        /* 大招按钮：高度与普通按钮一致 */
         .ultimate-btn {
             grid-column: span 2;
             display: flex;
@@ -93,7 +97,7 @@
             justify-content: center;
             width: 100%;
             padding: 12px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             border: none;
             border-radius: 12px;
@@ -105,12 +109,12 @@
             position: relative;
             overflow: hidden;
         }
-        .ultimate-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
-        .ultimate-btn:active:not(:disabled) { transform: scale(0.97); }
+        .ultimate-btn:hover:not(:disabled) { transform: scale(1.03); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
+        .ultimate-btn:active:not(:disabled) { transform: scale(0.95); }
         .ultimate-btn:disabled { background:#2a2a3e; color:#555; cursor:not-allowed; opacity:0.35; transform:none; box-shadow:none; filter:grayscale(100%); }
-        .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; border-radius:8px; }
+        .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0; border-radius:8px; }
         .ultimate-btn .ultimate-half:active:not(:disabled) { background: rgba(255,255,255,0.2); }
-        .ultimate-btn .ultimate-divider { font-size:22px; font-weight:900; color:#ffd93d; padding:0 6px; text-shadow:0 0 10px rgba(255,217,61,0.8); }
+        .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#ffd93d; padding:0 6px; text-shadow:0 0 10px rgba(255,217,61,0.8); }
         .ultimate-btn small { font-size:10px; opacity:0.85; display:block; margin-top:2px; font-weight:normal; }
 
         .restart-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
@@ -141,8 +145,8 @@
                 </ul>
                 <h4>🌟 限定技（全局仅一次）</h4>
                 <ul>
-                    <li>🟣 <b>强绷</b>：回复2点能量（被轻松绷住克制）</li>
-                    <li>🔴 <b>绷带</b>：回复2点生命（被破绷克制）</li>
+                    <li>💪 <b>强绷</b>：回复2点能量（被轻松绷住克制）</li>
+                    <li>🩹 <b>绷带</b>：回复2点生命（被破绷克制）</li>
                     <li>被克制时：大招效果无效，但对方行动照常结算</li>
                     <li>伤害和回血同时结算后再计算最终血量</li>
                 </ul>
@@ -183,9 +187,9 @@
             <button id="btn-轻松绷住" onclick="playerAction('轻松绷住')">🛡️ 轻松绷住<small>挡破绷/强绷</small></button>
             <button id="btn-完美绷住" onclick="playerAction('完美绷住')">✨ 完美绷住<small>挡一切 -1⚡</small></button>
             <button class="ultimate-btn" id="btn-ultimate" disabled>
-                <span class="ultimate-half" onclick="playerAction('强绷')">🟣 强绷<small>回2⚡</small></span>
+                <span class="ultimate-half" onclick="playerAction('强绷')">💪 强绷<small>回2⚡</small></span>
                 <span class="ultimate-divider">/</span>
-                <span class="ultimate-half" onclick="playerAction('绷带')">🔴 绷带<small>回2❤️</small></span>
+                <span class="ultimate-half" onclick="playerAction('绷带')">🩹 绷带<small>回2❤️</small></span>
             </button>
         </div>
         <button class="restart-btn" id="restartBtn" onclick="restartGame()">🔄 重新开始</button>
@@ -349,27 +353,18 @@
             const pa = getValidAction(gameState.player, action);
             const aa = getValidAction(gameState.ai, aiDecide());
 
-            // ========== 同时结算所有效果 ==========
-            let dmgToAI = 0;
-            let dmgToPlayer = 0;
-            let healToPlayer = 0;
-            let healToAI = 0;
-            let energyGainPlayer = 0;
-            let energyGainAI = 0;
+            let dmgToAI = 0, dmgToPlayer = 0;
+            let healToPlayer = 0, healToAI = 0;
+            let energyGainPlayer = 0, energyGainAI = 0;
 
-            // 普通伤害
             dmgToAI = getDamage(pa);
             dmgToPlayer = getDamage(aa);
 
-            // 防御判定
             if (aa === '完美绷住' || (aa === '轻松绷住' && pa === '破绷')) dmgToAI = 0;
             if (pa === '完美绷住' || (pa === '轻松绷住' && aa === '破绷')) dmgToPlayer = 0;
 
-            // 大招效果
-            let ultBlockedP = false;
-            let ultBlockedAI = false;
+            let ultBlockedP = false, ultBlockedAI = false;
 
-            // 玩家大招
             if (pa === '强绷') {
                 if (aa === '轻松绷住') ultBlockedP = true;
                 else energyGainPlayer = 2;
@@ -378,8 +373,6 @@
                 if (aa === '破绷') ultBlockedP = true;
                 else healToPlayer = 2;
             }
-
-            // AI大招
             if (aa === '强绷') {
                 if (pa === '轻松绷住') ultBlockedAI = true;
                 else energyGainAI = 2;
@@ -389,7 +382,6 @@
                 else healToAI = 2;
             }
 
-            // 普通能量
             if (pa === '绷住') energyGainPlayer = 1;
             if (pa === '绷绷炸弹') energyGainPlayer = -2;
             if (pa === '完美绷住') energyGainPlayer = -1;
@@ -397,22 +389,17 @@
             if (aa === '绷绷炸弹') energyGainAI = -2;
             if (aa === '完美绷住') energyGainAI = -1;
 
-            // 同时结算：伤害+回血
             gameState.player.hp += healToPlayer - dmgToPlayer;
             gameState.ai.hp += healToAI - dmgToAI;
-            // clamp
             gameState.player.hp = Math.max(0, Math.min(MAX_HP, gameState.player.hp));
             gameState.ai.hp = Math.max(0, Math.min(MAX_HP, gameState.ai.hp));
 
-            // 能量结算
             gameState.player.energy = Math.max(0, Math.min(MAX_ENERGY, gameState.player.energy + energyGainPlayer));
             gameState.ai.energy = Math.max(0, Math.min(MAX_ENERGY, gameState.ai.energy + energyGainAI));
 
-            // 大招使用标记
             if (pa === '强绷' || pa === '绷带') gameState.player.ultUsed = true;
             if (aa === '强绷' || aa === '绷带') gameState.ai.ultUsed = true;
 
-            // 破绷CD
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
 
