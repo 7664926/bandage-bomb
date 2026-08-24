@@ -79,6 +79,7 @@
             border:2px solid #ffd93d; box-shadow:0 4px 15px rgba(255,217,61,0.25);
         }
         #message, #onlineMessage { font-size:15px; color:#ffd93d; line-height:1.65; white-space:pre-line; font-weight:bold; }
+        .action-highlight { font-size:17px; font-weight:900; color:#ffffff; }
         .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
         .actions button {
             padding:12px; font-size:16px; font-weight:bold; border:none; border-radius:12px;
@@ -152,9 +153,9 @@
                 <button id="btn-轻松绷住" onclick="playerAction('轻松绷住')">🛡️ 轻松绷住<small>挡破绷/强绷</small></button>
                 <button id="btn-完美绷住" onclick="playerAction('完美绷住')">✨ 完美绷住<small>挡一切 -1⚡</small></button>
                 <button class="ultimate-btn" id="btn-ultimate" disabled>
-                    <span class="ultimate-half" onclick="playerAction('强绷')">💪 强绷<small>回2⚡</small></span>
+                    <span class="ultimate-half" onclick="playerAction('强绷')">💪 强绷<small>回复2⚡</small></span>
                     <span class="ultimate-divider">/</span>
-                    <span class="ultimate-half" onclick="playerAction('绷带')">🩹 绷带<small>回2❤️</small></span>
+                    <span class="ultimate-half" onclick="playerAction('绷带')">🩹 绷带<small>回复2❤️</small></span>
                 </button>
             </div>
             <button class="restart-btn" id="restartBtn" onclick="restartGame()">🔄 重新开始</button>
@@ -169,18 +170,18 @@
         <div class="online-panel" id="onlinePanel">
             <div id="onlineMenu">
                 <div class="room-btn-row">
-                    <button class="room-btn create" onclick="createRoom()">➕ 创建房间</button>
-                    <button class="room-btn join" onclick="showJoinInput()">🔑 加入房间</button>
+                    <button class="room-btn create" onclick="createRoom()">创建房间</button>
+                    <button class="room-btn join" onclick="showJoinInput()">加入房间</button>
                 </div>
                 <div id="joinInput" style="display:none;">
                     <input class="room-input" id="roomCodeInput" maxlength="6" placeholder="输入6位房间号" inputmode="numeric">
                     <div class="confirm-btn-wrapper">
-                        <button class="room-btn join" onclick="joinRoom()">✅ 加入</button>
+                        <button class="room-btn join" onclick="joinRoom()">加入</button>
                     </div>
                 </div>
             </div>
             <div id="onlineGame" style="display:none;">
-                <button class="leave-btn" onclick="leaveRoom()">🚪 退出房间</button>
+                <button class="leave-btn" onclick="leaveRoom()">退出房间</button>
                 <div class="player-info opponent">
                     <div class="player-name">👤 对手</div>
                     <div class="hp" id="onlineOpponentHp">❤️❤️❤️❤️</div>
@@ -208,7 +209,6 @@
         </div>
     </div>
 
-    <!-- 规则弹窗：完整版，不再删减 -->
     <div class="rules-modal" id="rulesModal">
         <div class="rules-content">
             <h3>📖 绷绷炸弹游戏规则</h3>
@@ -435,7 +435,7 @@
             if (aa === '强绷' || aa === '绷带') gameState.ai.ultUsed = true;
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
-            let msg = `第${gameState.round}回合<br>你「${pa}」 vs AI「${aa}」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
+            let msg = `第${gameState.round}回合<br>你「<span class="action-highlight">${pa}</span>」 vs AI「<span class="action-highlight">${aa}</span>」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
             if (healToPlayer > 0 || healToAI > 0) {
                 if (healToPlayer > 0 && healToAI > 0) msg += `<br>你回复${healToPlayer}血，AI回复${healToAI}血`;
                 else if (healToPlayer > 0) msg += `<br>你回复了${healToPlayer}血`;
@@ -663,7 +663,7 @@
             const oppDmg = onlineState.myPlayer === 'player1' ? dmgToP2 : dmgToP1;
             const myHeal = onlineState.myPlayer === 'player1' ? healToP1 : healToP2;
             const oppHeal = onlineState.myPlayer === 'player1' ? healToP2 : healToP1;
-            let msg = `上回合：你「${myAction}」 vs 对手「${oppAction}」<br>`;
+            let msg = `上回合：你「<span class="action-highlight">${myAction}</span>」 vs 对手「<span class="action-highlight">${oppAction}</span>」<br>`;
             msg += `你受到${myDmg}伤害，对手受到${oppDmg}伤害`;
             if (myHeal > 0 || oppHeal > 0) {
                 if (myHeal > 0 && oppHeal > 0) msg += `<br>你回复${myHeal}血，对手回复${oppHeal}血`;
