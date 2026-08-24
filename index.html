@@ -357,7 +357,17 @@
             gameState.ai.lastUsedBreak = (aa === '破绷');
             let msg = `第${gameState.round}回合<br>`;
             msg += `<span class="action-compare">你「<span class="action-name">${pa}</span>」 vs AI「<span class="action-name">${aa}</span>」</span><br>`;
-            msg += `<span class="result-line">你受到${dmgToPlayer}伤害，回复${healToPlayer}血；AI受到${dmgToAI}伤害，回复${healToAI}血</span>`;
+            let resultText = '';
+            if (healToPlayer > 0 && healToAI > 0) {
+                resultText = `你受到${dmgToPlayer}伤害，回复${healToPlayer}血；AI受到${dmgToAI}伤害，回复${healToAI}血`;
+            } else if (healToPlayer > 0) {
+                resultText = `你受到${dmgToPlayer}伤害，回复${healToPlayer}血；AI受到${dmgToAI}伤害`;
+            } else if (healToAI > 0) {
+                resultText = `你受到${dmgToPlayer}伤害；AI受到${dmgToAI}伤害，回复${healToAI}血`;
+            } else {
+                resultText = `你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
+            }
+            msg += `<span class="result-line">${resultText}</span>`;
             if (ultBlockedP) msg += `<br>💥 你的大招被克制！`;
             if (ultBlockedAI) msg += `<br>💥 AI的大招被克制！`;
             document.getElementById('message').innerHTML = msg;
