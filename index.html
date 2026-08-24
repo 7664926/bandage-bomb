@@ -114,11 +114,21 @@
             <div class="rules-content">
                 <h3>📖 绷绷炸弹游戏规则</h3>
                 <h4>🎯 游戏目标</h4>
-                <p>将对方生命值降至0即可获胜！双方各有4点❤️</p>
+                <p>将对方生命值降至0或以下即可获胜！双方初始各有4点❤️</p>
                 <h4>⚡ 能量系统</h4>
-                <ul><li>初始能量为0，上限3</li><li>"绷住"+1能量</li><li>"绷绷炸弹"-2能量</li><li>"完美绷住"-1能量</li></ul>
+                <ul>
+                    <li>初始能量为0，上限3</li>
+                    <li>使用"绷住"可获得1点能量</li>
+                    <li>使用"绷绷炸弹"消耗2点能量</li>
+                    <li>使用"完美绷住"消耗1点能量</li>
+                </ul>
                 <h4>🌟 限定技（全局仅一次）</h4>
-                <ul><li>💪 强绷：回2能量（被轻松绷住克制）</li><li>🩹 绷带：回2血（被破绷克制）</li></ul>
+                <ul>
+                    <li>💪 <b>强绷</b>：回复2点能量（被"轻松绷住"克制）</li>
+                    <li>🩹 <b>绷带</b>：回复2点生命（被"破绷"克制）</li>
+                    <li>被克制时：大招效果无效，但对方行动照常结算</li>
+                    <li>伤害和回血同时结算后再计算最终血量</li>
+                </ul>
                 <h4>📋 行动列表</h4>
                 <table class="action-table">
                     <tr><th>行动</th><th>能量</th><th>伤害</th><th>防御</th></tr>
@@ -128,6 +138,12 @@
                     <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷/强绷</td></tr>
                     <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切</td></tr>
                 </table>
+                <h4>⚠️ 重要规则</h4>
+                <ul>
+                    <li>破绷不能连续两轮使用</li>
+                    <li>伤害和回血同时计算，不会溢出</li>
+                    <li>灰色按钮表示当前不可用</li>
+                </ul>
                 <button class="close-rules-btn" onclick="toggleRules()">✅ 我知道了</button>
             </div>
         </div>
@@ -173,7 +189,6 @@
         let stats = { wins: 0, losses: 0, draws: 0 };
         let aiMemory = { playerPatterns: {}, lastPlayerActions: [] };
         const MAX_ENERGY = 3, MAX_HP = 4;
-
         const difficultyConfig = { easy:{name:'简单'}, normal:{name:'普通'}, hard:{name:'困难'}, learning:{name:'学习'} };
 
         function selectDifficulty(diff) {
@@ -237,7 +252,6 @@
             return { action: best, confidence: bestCount / total };
         }
 
-        // ========== 基于最优策略表的AI ==========
         function aiDecide() {
             switch(difficulty) {
                 case 'easy': return aiDecideEasy();
@@ -252,8 +266,6 @@
             if (!gameState.ai.ultUsed) opts.push('强绷','绷带');
             return opts[Math.floor(Math.random() * opts.length)];
         }
-
-        // 普通：半策略
         function aiDecideNormal() {
             const ai = gameState.ai, player = gameState.player;
             if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
@@ -266,47 +278,24 @@
             const opts = ['绷住']; if (!ai.lastUsedBreak) opts.push('破绷'); if (ai.energy >= 2) opts.push('绷绷炸弹'); if (ai.energy >= 1) opts.push('完美绷住');
             return opts[Math.floor(Math.random() * opts.length)];
         }
-
-        // 困难：接近最优
         function aiDecideHard() {
             const ai = gameState.ai, player = gameState.player;
-
-            // 1. 必杀
             if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-
-            // 2. 大招（参考最优：开局能量低用强绷，残血用绷带）
-            if (!ai.ultUsed) {
-                if (ai.energy <= 1 && ai.hp > 2 && Math.random() < 0.6) return '强绷';
-                if (ai.hp <= 2 && player.energy >= 2 && Math.random() < 0.7) return '绷带';
-            }
-
-            // 3. 防守（最优策略表：对手能量高时完美绷住概率高）
+            if (!ai.ultUsed && ai.energy <= 1 && ai.hp > 2 && Math.random() < 0.6) return '强绷';
+            if (!ai.ultUsed && ai.hp <= 2 && player.energy >= 2 && Math.random() < 0.7) return '绷带';
             if (player.energy >= 2 && ai.energy >= 1) {
                 if (ai.hp <= 3 && Math.random() < 0.7) return '完美绷住';
                 if (Math.random() < 0.3) return '完美绷住';
             }
-
-            // 4. 轻松绷住（最优约9%，克制破绷和强绷）
             if (!player.lastUsedBreak && Math.random() < 0.08) return '轻松绷住';
-
-            // 5. 炸弹施压（有能量时高概率）
             if (ai.energy >= 2 && Math.random() < 0.55) return '绷绷炸弹';
-
-            // 6. 破绷（最优约26%）
             if (!ai.lastUsedBreak && Math.random() < 0.45) return '破绷';
-
-            // 7. 攒能量
             if (ai.energy < 2) return '绷住';
-
             return '绷住';
         }
-
-        // 学习：困难基础上克制玩家
         function aiDecideLearning() {
             const ai = gameState.ai, player = gameState.player;
             const pattern = analyzePattern();
-
-            // 1. 学习克制
             if (pattern && pattern.confidence > 0.35) {
                 if (pattern.action === '绷绷炸弹' && ai.energy >= 1) return '完美绷住';
                 if (pattern.action === '破绷' && !player.lastUsedBreak) return '轻松绷住';
@@ -315,41 +304,22 @@
                 if (pattern.action === '绷住' && !ai.lastUsedBreak) return '破绷';
                 if (pattern.action === '轻松绷住' && ai.energy >= 2) return '绷绷炸弹';
             }
-
-            // 2. 必杀
             if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-
-            // 3. 大招
-            if (!ai.ultUsed) {
-                if (ai.energy <= 1 && ai.hp > 2 && Math.random() < 0.65) return '强绷';
-                if (ai.hp <= 2 && player.energy >= 2 && Math.random() < 0.75) return '绷带';
-            }
-
-            // 4. 防守
+            if (!ai.ultUsed && ai.energy <= 1 && ai.hp > 2 && Math.random() < 0.65) return '强绷';
+            if (!ai.ultUsed && ai.hp <= 2 && player.energy >= 2 && Math.random() < 0.75) return '绷带';
             if (player.energy >= 2 && ai.energy >= 1) {
                 if (ai.hp <= 3 && Math.random() < 0.75) return '完美绷住';
                 if (Math.random() < 0.35) return '完美绷住';
             }
-
-            // 5. 分析防御习惯
             if (aiMemory.lastPlayerActions.length > 8) {
                 const def = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
                 if (def <= 2 && ai.energy >= 2 && Math.random() < 0.7) return '绷绷炸弹';
                 if (def > 5 && ai.energy >= 2) return '绷住';
             }
-
-            // 6. 轻松绷住
             if (!player.lastUsedBreak && Math.random() < 0.09) return '轻松绷住';
-
-            // 7. 炸弹
             if (ai.energy >= 2 && Math.random() < 0.6) return '绷绷炸弹';
-
-            // 8. 破绷
             if (!ai.lastUsedBreak && Math.random() < 0.5) return '破绷';
-
-            // 9. 攒能量
             if (ai.energy < 2) return '绷住';
-
             return '绷住';
         }
 
@@ -360,40 +330,31 @@
             if (difficulty === 'learning') recordPlayerAction(action);
             const pa = getValidAction(gameState.player, action);
             const aa = getValidAction(gameState.ai, aiDecide());
-
-            let dmgToAI = 0, dmgToPlayer = 0, healToPlayer = 0, healToAI = 0;
-            let egP = 0, egA = 0;
-
-            dmgToAI = getDamage(pa);
-            dmgToPlayer = getDamage(aa);
+            let dmgToAI = 0, dmgToPlayer = 0, healToPlayer = 0, healToAI = 0, egP = 0, egA = 0;
+            dmgToAI = getDamage(pa); dmgToPlayer = getDamage(aa);
             if (aa === '完美绷住' || (aa === '轻松绷住' && pa === '破绷')) dmgToAI = 0;
             if (pa === '完美绷住' || (pa === '轻松绷住' && aa === '破绷')) dmgToPlayer = 0;
-
             let ultBlockedP = false, ultBlockedAI = false;
             if (pa === '强绷') { if (aa === '轻松绷住') ultBlockedP = true; else egP = 2; }
             if (pa === '绷带') { if (aa === '破绷') ultBlockedP = true; else healToPlayer = 2; }
             if (aa === '强绷') { if (pa === '轻松绷住') ultBlockedAI = true; else egA = 2; }
             if (aa === '绷带') { if (pa === '破绷') ultBlockedAI = true; else healToAI = 2; }
-
             if (pa === '绷住') egP = 1;
             if (pa === '绷绷炸弹') egP = -2;
             if (pa === '完美绷住') egP = -1;
             if (aa === '绷住') egA = 1;
             if (aa === '绷绷炸弹') egA = -2;
             if (aa === '完美绷住') egA = -1;
-
             gameState.player.hp += healToPlayer - dmgToPlayer;
             gameState.ai.hp += healToAI - dmgToAI;
             gameState.player.hp = Math.max(0, Math.min(MAX_HP, gameState.player.hp));
             gameState.ai.hp = Math.max(0, Math.min(MAX_HP, gameState.ai.hp));
             gameState.player.energy = Math.max(0, Math.min(MAX_ENERGY, gameState.player.energy + egP));
             gameState.ai.energy = Math.max(0, Math.min(MAX_ENERGY, gameState.ai.energy + egA));
-
             if (pa === '强绷' || pa === '绷带') gameState.player.ultUsed = true;
             if (aa === '强绷' || aa === '绷带') gameState.ai.ultUsed = true;
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
-
             let msg = `第${gameState.round}回合<br>`;
             msg += `<span class="action-compare">你「<span class="action-name">${pa}</span>」 vs AI「<span class="action-name">${aa}</span>」</span><br>`;
             msg += `<span class="result-line">你受到${dmgToPlayer}伤害，回复${healToPlayer}血；AI受到${dmgToAI}伤害，回复${healToAI}血</span>`;
@@ -408,7 +369,6 @@
                 if (!gameState.gameOver) { disableAllButtons(false); updateButtonStates(); }
             }, 1000);
         }
-
         function disableAllButtons(disabled) {
             document.querySelectorAll('.actions button').forEach(btn => btn.disabled = disabled);
             if (!disabled) updateButtonStates();
