@@ -335,6 +335,7 @@
         }
 
         function playerAction(action) {
+            _hmt.push(['_trackEvent', '行动选择', action]);
             if (gameState.gameOver || gameState.isProcessing) return;
             gameState.isProcessing = true;
             disableAllButtons(true);
