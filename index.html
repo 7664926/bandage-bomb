@@ -5,16 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>绷绷炸弹 - AI对战</title>
 
-    <script>
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?c862d020167a6db851baa3139d9be224";
-      var s = document.getElementsByTagName("script")[0]; 
-      s.parentNode.insertBefore(hm, s);
-    })();
-    </script>
-
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -191,6 +181,24 @@
     </div>
 
     <script>
+        // ========== Supabase 统计配置 ==========
+        const SUPABASE_URL = 'https://xtblgsmyvewsytfhtzcy.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_dx9y6Qr3TscrMSAXuzNM-g_BaquKLYM';
+        
+        // 发送统计数据
+        function sendStats(action) {
+            fetch(`${SUPABASE_URL}/rest/v1/action_records`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: action })
+            }).catch(e => console.log('统计失败:', e));
+        }
+        // ========== Supabase 统计结束 ==========
+
         let gameState = {
             player: { hp: 4, energy: 0, lastUsedBreak: false, ultUsed: false },
             ai: { hp: 4, energy: 0, lastUsedBreak: false, ultUsed: false },
@@ -335,7 +343,10 @@
         }
 
         function playerAction(action) {
-            _hmt.push(['_trackEvent', '行动选择', action]);
+            // ========== 发送统计到Supabase ==========
+            sendStats(action);
+            // ========== 统计结束 ==========
+            
             if (gameState.gameOver || gameState.isProcessing) return;
             gameState.isProcessing = true;
             disableAllButtons(true);
