@@ -418,6 +418,11 @@
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
             let msg = `第${gameState.round}回合<br>你「${pa}」 vs AI「${aa}」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
+            if (healToPlayer > 0 || healToAI > 0) {
+                if (healToPlayer > 0 && healToAI > 0) msg += `<br>你回复${healToPlayer}血，AI回复${healToAI}血`;
+                else if (healToPlayer > 0) msg += `<br>你回复了${healToPlayer}血`;
+                else msg += `<br>AI回复了${healToAI}血`;
+            }
             if (ultBlockedP) msg += `<br>💥 你的大招被克制！`;
             if (ultBlockedAI) msg += `<br>💥 AI的大招被克制！`;
             document.getElementById('message').innerHTML = msg;
@@ -534,7 +539,6 @@
             onlineState.myBreakCd = onlineState.myPlayer === 'player1' ? room.player1_break_cd : room.player2_break_cd;
             onlineState.round = room.round;
             
-            // ========== 修复1：根据当前回合是否有我的行动来更新状态 ==========
             const myActionsRes = await fetch(
                 `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`,
                 { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
@@ -543,7 +547,10 @@
             if (myActions.length === 0) {
                 onlineState.myActionSubmitted = false;
                 if (room.status === 'playing' && !onlineState.gameOver) {
-                    document.getElementById('onlineMessage').textContent = `第${onlineState.round}回合，选择你的行动`;
+                    const currentMsg = document.getElementById('onlineMessage').textContent;
+                    if (!currentMsg.includes('上回合')) {
+                        document.getElementById('onlineMessage').textContent = '选择你的行动';
+                    }
                 }
             } else {
                 onlineState.myActionSubmitted = true;
@@ -552,7 +559,6 @@
                 }
             }
             updateOnlineButtonStates();
-            // ========== 修复1结束 ==========
             
             updateOnlineDisplay();
             
@@ -624,7 +630,6 @@
             onlineState.round++;
             onlineState.myActionSubmitted = false;
             
-            // 写回数据库
             const p1Hp = onlineState.myPlayer === 'player1' ? p1.hp : p2.hp;
             const p2Hp = onlineState.myPlayer === 'player1' ? p2.hp : p1.hp;
             const p1Energy = onlineState.myPlayer === 'player1' ? p1.energy : p2.energy;
@@ -649,13 +654,20 @@
             updateOnlineDisplay();
             updateOnlineButtonStates();
             
-            let msg = `第${onlineState.round - 1}回合<br>`;
             const myAction = onlineState.myPlayer === 'player1' ? p1A : p2A;
             const oppAction = onlineState.myPlayer === 'player1' ? p2A : p1A;
             const myDmg = onlineState.myPlayer === 'player1' ? dmgToP1 : dmgToP2;
             const oppDmg = onlineState.myPlayer === 'player1' ? dmgToP2 : dmgToP1;
-            msg += `你「${myAction}」 vs 对手「${oppAction}」<br>`;
+            const myHeal = onlineState.myPlayer === 'player1' ? healToP1 : healToP2;
+            const oppHeal = onlineState.myPlayer === 'player1' ? healToP2 : healToP1;
+            
+            let msg = `上回合：你「${myAction}」 vs 对手「${oppAction}」<br>`;
             msg += `你受到${myDmg}伤害，对手受到${oppDmg}伤害`;
+            if (myHeal > 0 || oppHeal > 0) {
+                if (myHeal > 0 && oppHeal > 0) msg += `<br>你回复${myHeal}血，对手回复${oppHeal}血`;
+                else if (myHeal > 0) msg += `<br>你回复了${myHeal}血`;
+                else msg += `<br>对手回复了${oppHeal}血`;
+            }
             if ((onlineState.myPlayer === 'player1' && ultBlockedP1) || (onlineState.myPlayer === 'player2' && ultBlockedP2)) msg += `<br>💥 你的大招被克制！`;
             if ((onlineState.myPlayer === 'player1' && ultBlockedP2) || (onlineState.myPlayer === 'player2' && ultBlockedP1)) msg += `<br>💥 对手的大招被克制！`;
             
@@ -668,8 +680,6 @@
             } else if (onlineState.oppHp === 0) {
                 msg += `<br>🎉 你赢了！`;
                 onlineState.gameOver = true;
-            } else {
-                msg += `<br>第${onlineState.round}回合，选择你的行动`;
             }
             document.getElementById('onlineMessage').innerHTML = msg;
         }
