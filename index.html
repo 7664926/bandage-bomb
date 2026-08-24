@@ -100,7 +100,7 @@
         .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#ffd93d; padding:0 6px; }
         .ultimate-btn small { font-size:10px; opacity:0.85; font-weight:normal; }
-        .restart-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
+        .restart-btn, .rematch-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
         .stats { display:flex; justify-content:space-around; margin-top:8px; padding:6px; background:rgba(0,0,0,0.2); border-radius:10px; font-size:11px; color:#e0e0e0; }
 
         .online-panel { display:none; }
@@ -205,6 +205,7 @@
                         <span class="ultimate-half" onclick="onlineAction('绷带')">🩹 绷带</span>
                     </button>
                 </div>
+                <button class="rematch-btn" id="rematchBtn" onclick="requestRematch()">🔄 再来一把</button>
             </div>
         </div>
     </div>
@@ -261,11 +262,12 @@
 
         const MAX_ENERGY = 3, MAX_HP = 4;
         function getDamage(action) { return action === '破绷' ? 1 : action === '绷绷炸弹' ? 3 : 0; }
-        function sendStats(action) {
+
+        function sendStats(action, mode) {
             fetch(`${SUPABASE_URL}/rest/v1/action_record`, {
                 method: 'POST',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ action: action })
+                body: JSON.stringify({ action: action, mode: mode })
             }).catch(e => console.log('统计失败:', e));
         }
 
@@ -285,6 +287,7 @@
             document.getElementById('message').innerHTML = `难度已切换为：${difficultyConfig[diff].name}<br>选择你的行动`;
         }
         function resetLearning() { aiMemory = { playerPatterns:{}, lastPlayerActions:[] }; }
+
         function updateButtonStates() {
             const p = gameState.player;
             setButtonState('绷住', true);
@@ -404,7 +407,7 @@
         }
 
         function playerAction(action) {
-            sendStats(action);
+            sendStats(action, 'single');
             if (gameState.gameOver || gameState.isProcessing) return;
             gameState.isProcessing = true;
             disableAllButtons(true);
@@ -420,15 +423,9 @@
             if (pa === '完美绷住' || (pa === '轻松绷住' && aa === '破绷')) dmgToPlayer = 0;
             let ultBlockedP = false, ultBlockedAI = false;
             if (pa === '强绷') { if (aa === '轻松绷住') ultBlockedP = true; else egP = 2; }
-            if (pa === '绷带') {
-                if (aa === '破绷') ultBlockedP = true;
-                else healToPlayer = Math.min(2, MAX_HP - playerHpBefore);
-            }
+            if (pa === '绷带') { if (aa === '破绷') ultBlockedP = true; else healToPlayer = Math.min(2, MAX_HP - playerHpBefore); }
             if (aa === '强绷') { if (pa === '轻松绷住') ultBlockedAI = true; else egA = 2; }
-            if (aa === '绷带') {
-                if (pa === '破绷') ultBlockedAI = true;
-                else healToAI = Math.min(2, MAX_HP - aiHpBefore);
-            }
+            if (aa === '绷带') { if (pa === '破绷') ultBlockedAI = true; else healToAI = Math.min(2, MAX_HP - aiHpBefore); }
             if (pa === '绷住') egP = 1;
             if (pa === '绷绷炸弹') egP = -2;
             if (pa === '完美绷住') egP = -1;
@@ -487,7 +484,7 @@
         // ========== 单机结束 ==========
 
         // ========== 联机 ==========
-        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false };
+        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
         let lastRoundMessage = '';
 
         function generateRoomCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
@@ -497,7 +494,7 @@
             const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms`, {
                 method: 'POST',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ room_code: code, status: 'waiting', player1_hp: 4, player2_hp: 4, player1_energy: 0, player2_energy: 0, player1_ult_used: false, player2_ult_used: false, player1_break_cd: false, player2_break_cd: false, round: 1 })
+                body: JSON.stringify({ room_code: code, status: 'waiting', player1_hp: 4, player2_hp: 4, player1_energy: 0, player2_energy: 0, player1_ult_used: false, player2_ult_used: false, player1_break_cd: false, player2_break_cd: false, round: 1, player1_rematch: false, player2_rematch: false })
             });
             if (res.ok) {
                 onlineState.roomCode = code;
@@ -535,12 +532,13 @@
             if (onlineState.roomCode) {
                 fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             }
-            onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false };
+            onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
             lastRoundMessage = '';
             document.getElementById('onlineGame').style.display = 'none';
             document.getElementById('onlineMenu').style.display = 'block';
             document.getElementById('joinInput').style.display = 'none';
             document.getElementById('roomCodeInput').value = '';
+            document.getElementById('rematchBtn').style.display = 'none';
         }
 
         function startPolling() {
@@ -568,6 +566,43 @@
                 await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
                 leaveRoom();
                 alert('房间已超时解散');
+                return;
+            }
+
+            const p1Rematch = room.player1_rematch || false;
+            const p2Rematch = room.player2_rematch || false;
+
+            if (p1Rematch && p2Rematch) {
+                await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+                    method: 'PATCH',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                    body: JSON.stringify({
+                        player1_hp: 4, player2_hp: 4,
+                        player1_energy: 0, player2_energy: 0,
+                        player1_ult_used: false, player2_ult_used: false,
+                        player1_break_cd: false, player2_break_cd: false,
+                        player1_rematch: false, player2_rematch: false,
+                        round: 1,
+                        status: 'playing'
+                    })
+                });
+                onlineState.myHp = 4;
+                onlineState.oppHp = 4;
+                onlineState.myEnergy = 0;
+                onlineState.oppEnergy = 0;
+                onlineState.myUltUsed = false;
+                onlineState.oppUltUsed = false;
+                onlineState.myBreakCd = false;
+                onlineState.oppBreakCd = false;
+                onlineState.round = 1;
+                onlineState.gameOver = false;
+                onlineState.myActionSubmitted = false;
+                onlineState.rematchRequested = false;
+                lastRoundMessage = '';
+                document.getElementById('rematchBtn').style.display = 'none';
+                document.getElementById('onlineMessage').textContent = '🎮 再来一把！选择你的行动';
+                updateOnlineDisplay();
+                updateOnlineButtonStates();
                 return;
             }
 
@@ -622,6 +657,7 @@
 
         async function onlineAction(action) {
             if (onlineState.gameOver || onlineState.myActionSubmitted) return;
+            sendStats(action, 'online');
             onlineState.myActionSubmitted = true;
             updateOnlineButtonStates();
             await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
@@ -632,13 +668,22 @@
             document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
         }
 
-        async function resolveOnlineRound(p1A, p2A) {
-            const myHpBefore = onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp;
-            const oppHpBefore = onlineState.myPlayer === 'player1' ? onlineState.oppHp : onlineState.myHp;
+        async function requestRematch() {
+            if (!onlineState.gameOver || onlineState.rematchRequested) return;
+            onlineState.rematchRequested = true;
+            document.getElementById('rematchBtn').disabled = true;
+            const field = onlineState.myPlayer === 'player1' ? 'player1_rematch' : 'player2_rematch';
+            await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+                method: 'PATCH',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ [field]: true })
+            });
+            document.getElementById('onlineMessage').textContent = '⏳ 等待对手同意再来一把...';
+        }
 
+        async function resolveOnlineRound(p1A, p2A) {
             const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy, ultUsed: onlineState.myPlayer === 'player1' ? onlineState.myUltUsed : onlineState.oppUltUsed };
             const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy, ultUsed: onlineState.myPlayer === 'player2' ? onlineState.myUltUsed : onlineState.oppUltUsed };
-
             const p1HpBefore = p1.hp;
             const p2HpBefore = p2.hp;
 
@@ -728,6 +773,11 @@
 
             lastRoundMessage = msg;
             document.getElementById('onlineMessage').innerHTML = msg;
+
+            if (onlineState.gameOver) {
+                document.getElementById('rematchBtn').style.display = 'block';
+                document.getElementById('rematchBtn').disabled = false;
+            }
         }
 
         function updateOnlineDisplay() {
