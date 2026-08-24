@@ -169,6 +169,7 @@
         <!-- 联机 -->
         <div class="online-panel" id="onlinePanel">
             <div id="onlineMenu">
+                <input class="room-input" id="nicknameInput" placeholder="请输入昵称（首次必填）" maxlength="12">
                 <div class="room-btn-row">
                     <button class="room-btn create" onclick="createRoom()">➕ 创建房间</button>
                     <button class="room-btn join" onclick="showJoinInput()">加入房间</button>
@@ -183,13 +184,13 @@
             <div id="onlineGame" style="display:none;">
                 <button class="leave-btn" onclick="leaveRoom()">🚪 退出房间</button>
                 <div class="player-info opponent">
-                    <div class="player-name">👤 对手</div>
+                    <div class="player-name" id="onlineOpponentName">👤 对手</div>
                     <div class="hp" id="onlineOpponentHp">❤️❤️❤️❤️</div>
                     <div class="energy" id="onlineOpponentEnergy">⚡ 能量：0</div>
                 </div>
                 <div class="battle-info"><div id="onlineMessage">等待对手...</div></div>
                 <div class="player-info you">
-                    <div class="player-name">😊 你</div>
+                    <div class="player-name" id="onlinePlayerName">😊 你</div>
                     <div class="hp" id="onlinePlayerHp">❤️❤️❤️❤️</div>
                     <div class="energy" id="onlinePlayerEnergy">⚡ 能量：0</div>
                 </div>
@@ -287,7 +288,6 @@
             document.getElementById('message').innerHTML = `难度已切换为：${difficultyConfig[diff].name}<br>选择你的行动`;
         }
         function resetLearning() { aiMemory = { playerPatterns:{}, lastPlayerActions:[] }; }
-
         function updateButtonStates() {
             const p = gameState.player;
             setButtonState('绷住', true);
@@ -486,21 +486,37 @@
         // ========== 联机 ==========
         let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
         let lastRoundMessage = '';
+        let sessionNickname = '';
 
         function generateRoomCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
+        function requireNickname() {
+            if (sessionNickname) return sessionNickname;
+            const input = document.getElementById('nicknameInput').value.trim();
+            if (!input) {
+                alert('首次联机必须填写昵称');
+                return null;
+            }
+            sessionNickname = input;
+            document.getElementById('nicknameInput').value = input;
+            return input;
+        }
+
         async function createRoom() {
+            const nickname = requireNickname();
+            if (!nickname) return;
             const code = generateRoomCode();
             const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms`, {
                 method: 'POST',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ room_code: code, status: 'waiting', player1_hp: 4, player2_hp: 4, player1_energy: 0, player2_energy: 0, player1_ult_used: false, player2_ult_used: false, player1_break_cd: false, player2_break_cd: false, round: 1, player1_rematch: false, player2_rematch: false })
+                body: JSON.stringify({ room_code: code, status: 'waiting', player1_hp: 4, player2_hp: 4, player1_energy: 0, player2_energy: 0, player1_ult_used: false, player2_ult_used: false, player1_break_cd: false, player2_break_cd: false, round: 1, player1_rematch: false, player2_rematch: false, player1_nickname: nickname, player2_nickname: '对手' })
             });
             if (res.ok) {
                 onlineState.roomCode = code;
                 onlineState.myPlayer = 'player1';
                 document.getElementById('onlineMenu').style.display = 'none';
                 document.getElementById('onlineGame').style.display = 'block';
+                document.getElementById('onlinePlayerName').textContent = '😊 ' + nickname;
                 document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<b>${code}</b><br>等待对手加入...`;
                 startPolling();
             } else { alert('创建房间失败'); }
@@ -509,6 +525,8 @@
         function showJoinInput() { document.getElementById('joinInput').style.display = 'block'; }
 
         async function joinRoom() {
+            const nickname = requireNickname();
+            if (!nickname) return;
             const code = document.getElementById('roomCodeInput').value.trim();
             if (code.length !== 6) { alert('请输入6位房间号'); return; }
             const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${code}&status=eq.waiting`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
@@ -519,10 +537,11 @@
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${code}`, {
                 method: 'PATCH',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ status: 'playing' })
+                body: JSON.stringify({ status: 'playing', player2_nickname: nickname })
             });
             document.getElementById('onlineMenu').style.display = 'none';
             document.getElementById('onlineGame').style.display = 'block';
+            document.getElementById('onlinePlayerName').textContent = '😊 ' + nickname;
             document.getElementById('onlineMessage').textContent = '🎮 游戏开始！选择你的行动';
             startPolling();
         }
@@ -614,6 +633,9 @@
             onlineState.oppUltUsed = onlineState.myPlayer === 'player1' ? room.player2_ult_used : room.player1_ult_used;
             onlineState.myBreakCd = onlineState.myPlayer === 'player1' ? room.player1_break_cd : room.player2_break_cd;
             onlineState.round = room.round;
+
+            const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
+            document.getElementById('onlineOpponentName').textContent = '👤 ' + oppNickname;
 
             const myActionsRes = await fetch(
                 `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`,
