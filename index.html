@@ -79,30 +79,22 @@
             border:2px solid #ffd93d; box-shadow:0 4px 15px rgba(255,217,61,0.25);
         }
         #message, #onlineMessage { font-size:15px; color:#ffd93d; line-height:1.65; white-space:pre-line; font-weight:bold; }
-        .action-compare { font-size:18px; font-weight:800; letter-spacing:0.5px; text-shadow:0 0 8px rgba(255,217,61,0.5); }
-        .action-name { font-weight:800; font-size:19px; color:#ffffff; text-shadow:0 0 10px rgba(255,217,61,0.7); }
-        .result-line { font-size:16px; font-weight:700; letter-spacing:0.5px; }
-        .end-message { font-size:20px; font-weight:900; letter-spacing:1px; text-shadow:0 0 15px rgba(255,217,61,0.6); }
         .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
         .actions button {
             padding:12px; font-size:14px; font-weight:bold; border:none; border-radius:12px;
             background:linear-gradient(135deg,#667eea,#764ba2); color:white; cursor:pointer;
-            transition:all 0.3s; touch-action:manipulation; position:relative; overflow:hidden;
+            transition:all 0.3s; touch-action:manipulation;
         }
-        .actions button:hover:not(:disabled) { transform:scale(1.03); box-shadow:0 5px 20px rgba(102,126,234,0.4); }
-        .actions button:active:not(:disabled) { transform:scale(0.95); }
+        .actions button:hover:not(:disabled) { transform:scale(1.03); }
+        .actions button:disabled { background:#2a2a3e; color:#555; opacity:0.35; }
         .actions button small { font-size:10px; opacity:0.8; display:block; margin-top:2px; }
-        .actions button:disabled { background:#2a2a3e; color:#555; cursor:not-allowed; opacity:0.35; transform:none; box-shadow:none; filter:grayscale(100%); border:1px solid #333; }
-        .actions button:disabled small { opacity:0.3; }
-        .actions button:disabled::after { content:attr(data-disabled-reason); position:absolute; bottom:2px; left:50%; transform:translateX(-50%); font-size:9px; color:#ff6b6b; white-space:nowrap; opacity:0.8; }
-        #btn-完美绷住 { grid-column: span 2; }
+        #btn-完美绷住, #onlineBtn-完美绷住 { grid-column: span 2; }
         .ultimate-btn {
             grid-column: span 2; display:flex; align-items:center; justify-content:center;
             width:100%; padding:12px; font-size:14px; font-weight:bold; border:none;
             border-radius:12px; background:linear-gradient(135deg,#f093fb,#f5576c);
             color:white; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
         }
-        .ultimate-btn:hover:not(:disabled) { transform:scale(1.03); box-shadow:0 5px 20px rgba(240,147,251,0.4); }
         .ultimate-btn:disabled { background:#2a2a3e; color:#555; opacity:0.35; }
         .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#ffd93d; padding:0 6px; }
@@ -110,43 +102,30 @@
         .restart-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
         .stats { display:flex; justify-content:space-around; margin-top:8px; padding:6px; background:rgba(0,0,0,0.2); border-radius:10px; font-size:11px; color:#e0e0e0; }
 
-        /* 联机样式 */
         .online-panel { display:none; }
         .online-panel.active { display:block; }
         .single-panel.active { display:block; }
         .single-panel { display:none; }
         .room-btn-row { display:flex; gap:8px; margin:5px 0; }
-        .room-btn {
-            flex:1; padding:12px; font-size:14px; font-weight:bold; border:none;
-            border-radius:10px; cursor:pointer;
-        }
+        .room-btn { flex:1; padding:12px; font-size:14px; font-weight:bold; border:none; border-radius:10px; cursor:pointer; }
         .room-btn.create { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
         .room-btn.join { background:linear-gradient(135deg,#f093fb,#f5576c); color:white; }
-        .room-input {
-            width:100%; padding:10px; font-size:16px; border:2px solid #4a4a8a;
-            border-radius:10px; background:#1a1a2e; color:#ffd93d; text-align:center;
-            margin:5px 0; outline:none;
-        }
-        .confirm-btn-row { display:flex; justify-content:center; }
-        .confirm-btn-row .room-btn { width:60%; flex:none; }
-        .leave-btn {
-            width:100%; padding:8px; margin-bottom:10px; background:#ff4444; color:white;
-            border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold;
-        }
+        .room-input { width:100%; padding:10px; font-size:16px; border:2px solid #4a4a8a; border-radius:10px; background:#1a1a2e; color:#ffd93d; text-align:center; margin:5px 0; outline:none; }
+        .confirm-btn-wrapper { display:flex; justify-content:center; }
+        .confirm-btn-wrapper .room-btn { flex:none; width:60%; }
+        .leave-btn { width:100%; padding:8px; margin-bottom:10px; background:#ff4444; color:white; border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold; }
     </style>
 </head>
 <body>
     <div class="game-container">
         <div class="game-title">⚡ 绷绷炸弹 ⚡</div>
-        
         <div class="mode-selector">
             <button class="mode-btn active" id="modeSingleBtn" onclick="switchMode('single')">🤖 单机</button>
             <button class="mode-btn" id="modeOnlineBtn" onclick="switchMode('online')">🌐 联机</button>
         </div>
-        
         <button class="rules-toggle-btn" onclick="toggleRules()">📖 查看游戏规则</button>
 
-        <!-- 单机模式 -->
+        <!-- 单机 -->
         <div class="single-panel active" id="singlePanel">
             <div class="difficulty-selector">
                 <button class="difficulty-btn active" data-difficulty="easy" onclick="selectDifficulty('easy')">😊 简单</button>
@@ -186,7 +165,7 @@
             </div>
         </div>
 
-        <!-- 联机模式 -->
+        <!-- 联机 -->
         <div class="online-panel" id="onlinePanel">
             <div id="onlineMenu">
                 <div class="room-btn-row">
@@ -195,7 +174,7 @@
                 </div>
                 <div id="joinInput" style="display:none;">
                     <input class="room-input" id="roomCodeInput" maxlength="6" placeholder="输入6位房间号" inputmode="numeric">
-                    <div class="confirm-btn-row">
+                    <div class="confirm-btn-wrapper">
                         <button class="room-btn join" onclick="joinRoom()">✅ 加入</button>
                     </div>
                 </div>
@@ -218,7 +197,7 @@
                     <button onclick="onlineAction('破绷')">⚔️ 破绷</button>
                     <button onclick="onlineAction('绷绷炸弹')">💣 绷绷炸弹</button>
                     <button onclick="onlineAction('轻松绷住')">🛡️ 轻松绷住</button>
-                    <button onclick="onlineAction('完美绷住')">✨ 完美绷住</button>
+                    <button id="onlineBtn-完美绷住" onclick="onlineAction('完美绷住')">✨ 完美绷住</button>
                     <button class="ultimate-btn" id="onlineUltimateBtn">
                         <span class="ultimate-half" onclick="onlineAction('强绷')">💪 强绷</span>
                         <span class="ultimate-divider">/</span>
@@ -229,26 +208,15 @@
         </div>
     </div>
 
-    <!-- 规则弹窗 -->
     <div class="rules-modal" id="rulesModal">
         <div class="rules-content">
             <h3>📖 绷绷炸弹游戏规则</h3>
             <h4>🎯 游戏目标</h4>
             <p>将对方生命值降至0或以下即可获胜！双方初始各有4点❤️</p>
             <h4>⚡ 能量系统</h4>
-            <ul>
-                <li>初始能量为0，上限3</li>
-                <li>使用"绷住"可获得1点能量</li>
-                <li>使用"绷绷炸弹"消耗2点能量</li>
-                <li>使用"完美绷住"消耗1点能量</li>
-            </ul>
+            <ul><li>初始能量为0，上限3</li><li>"绷住"+1能量</li><li>"绷绷炸弹"-2能量</li><li>"完美绷住"-1能量</li></ul>
             <h4>🌟 限定技（全局仅一次）</h4>
-            <ul>
-                <li>💪 <b>强绷</b>：回复2点能量（被"轻松绷住"克制）</li>
-                <li>🩹 <b>绷带</b>：回复2点生命（被"破绷"克制）</li>
-                <li>被克制时：大招效果无效，但对方行动照常结算</li>
-                <li>伤害和回血同时结算后再计算最终血量</li>
-            </ul>
+            <ul><li>💪 强绷：回2能量（被"轻松绷住"克制）</li><li>🩹 绷带：回2生命（被"破绷"克制）</li><li>被克制时大招无效，对方行动照常</li><li>伤害和回血同时结算</li></ul>
             <h4>📋 行动列表</h4>
             <table class="action-table">
                 <tr><th>行动</th><th>能量</th><th>伤害</th><th>防御</th></tr>
@@ -258,23 +226,14 @@
                 <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷/强绷</td></tr>
                 <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切</td></tr>
             </table>
-            <h4>⚠️ 重要规则</h4>
-            <ul>
-                <li>破绷不能连续两轮使用</li>
-                <li>伤害和回血同时计算，不会溢出</li>
-                <li>灰色按钮表示当前不可用</li>
-            </ul>
             <button class="close-rules-btn" onclick="toggleRules()">✅ 我知道了</button>
         </div>
     </div>
 
     <script>
-        // ========== Supabase 配置 ==========
         const SUPABASE_URL = 'https://xtblgsmyvewsytfhtzcy.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0Ymxnc215dmV3c3l0Zmh0emN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NDg5MjQsImV4cCI6MjEwMzEyNDkyNH0.kAnqMK2vabumCDgXZg09kgd3Zuz-B5RluZvNu9rAkH4';
-        // ========== Supabase 结束 ==========
 
-        // ========== 模式切换 ==========
         function switchMode(mode) {
             document.getElementById('singlePanel').classList.toggle('active', mode === 'single');
             document.getElementById('onlinePanel').classList.toggle('active', mode === 'online');
@@ -282,30 +241,19 @@
             document.getElementById('modeOnlineBtn').classList.toggle('active', mode === 'online');
         }
         function toggleRules() { document.getElementById('rulesModal').classList.toggle('show'); }
-        // ========== 模式切换结束 ==========
 
-        // ========== 单机模式 ==========
+        // ========== 单机 ==========
         function sendStats(action) {
             fetch(`${SUPABASE_URL}/rest/v1/action_record`, {
                 method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
                 body: JSON.stringify({ action: action })
             }).catch(e => console.log('统计失败:', e));
         }
-
-        let gameState = {
-            player: { hp: 4, energy: 0, lastUsedBreak: false, ultUsed: false },
-            ai: { hp: 4, energy: 0, lastUsedBreak: false, ultUsed: false },
-            round: 1, gameOver: false, isProcessing: false
-        };
+        let gameState = { player:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, ai:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, round:1, gameOver:false, isProcessing:false };
         let difficulty = 'easy';
-        let stats = { wins: 0, losses: 0, draws: 0 };
-        let aiMemory = { playerPatterns: {}, lastPlayerActions: [] };
+        let stats = { wins:0, losses:0, draws:0 };
+        let aiMemory = { playerPatterns:{}, lastPlayerActions:[] };
         const MAX_ENERGY = 3, MAX_HP = 4;
         const difficultyConfig = { easy:{name:'简单'}, normal:{name:'普通'}, hard:{name:'困难'}, learning:{name:'学习'} };
 
@@ -317,8 +265,7 @@
             if (diff === 'learning') resetLearning();
             document.getElementById('message').innerHTML = `难度已切换为：${difficultyConfig[diff].name}<br>选择你的行动`;
         }
-        function resetLearning() { aiMemory = { playerPatterns: {}, lastPlayerActions: [] }; }
-
+        function resetLearning() { aiMemory = { playerPatterns:{}, lastPlayerActions:[] }; }
         function updateButtonStates() {
             const p = gameState.player;
             setButtonState('绷住', true, '');
@@ -350,7 +297,6 @@
             return action;
         }
         function getDamage(action) { return action === '破绷' ? 1 : action === '绷绷炸弹' ? 3 : 0; }
-
         function recordPlayerAction(action) {
             const p = gameState.player, a = gameState.ai;
             const key = `${p.hp}_${a.hp}_${p.energy}_${a.energy}_${p.lastUsedBreak ? 1 : 0}`;
@@ -368,7 +314,6 @@
             for (const [act, cnt] of Object.entries(patterns)) { total += cnt; if (cnt > bestCount) { bestCount = cnt; best = act; } }
             return { action: best, confidence: bestCount / total };
         }
-
         function aiDecide() {
             switch(difficulty) {
                 case 'easy': return aiDecideEasy();
@@ -439,7 +384,6 @@
             if (ai.energy < 2) return '绷住';
             return '绷住';
         }
-
         function playerAction(action) {
             sendStats(action);
             if (gameState.gameOver || gameState.isProcessing) return;
@@ -474,18 +418,8 @@
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
             let msg = `第${gameState.round}回合<br>`;
-            msg += `<span class="action-compare">你「<span class="action-name">${pa}</span>」 vs AI「<span class="action-name">${aa}</span>」</span><br>`;
-            let resultText = '';
-            if (healToPlayer > 0 && healToAI > 0) {
-                resultText = `你受到${dmgToPlayer}伤害，回复${healToPlayer}血；AI受到${dmgToAI}伤害，回复${healToAI}血`;
-            } else if (healToPlayer > 0) {
-                resultText = `你受到${dmgToPlayer}伤害，回复${healToPlayer}血；AI受到${dmgToAI}伤害`;
-            } else if (healToAI > 0) {
-                resultText = `你受到${dmgToPlayer}伤害；AI受到${dmgToAI}伤害，回复${healToAI}血`;
-            } else {
-                resultText = `你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
-            }
-            msg += `<span class="result-line">${resultText}</span>`;
+            msg += `你「${pa}」 vs AI「${aa}」<br>`;
+            msg += `你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
             if (ultBlockedP) msg += `<br>💥 你的大招被克制！`;
             if (ultBlockedAI) msg += `<br>💥 AI的大招被克制！`;
             document.getElementById('message').innerHTML = msg;
@@ -502,9 +436,9 @@
             if (!disabled) updateButtonStates();
         }
         function checkGameOver() {
-            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats.draws++; document.getElementById('message').innerHTML = '<span class="end-message">🤝 平局！</span>'; endGame(); }
-            else if (gameState.player.hp === 0) { stats.losses++; document.getElementById('message').innerHTML = '<span class="end-message">😢 你输了！AI获胜！</span>'; endGame(); }
-            else if (gameState.ai.hp === 0) { stats.wins++; document.getElementById('message').innerHTML = '<span class="end-message">🎉 恭喜！你赢了！</span>'; endGame(); }
+            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats.draws++; document.getElementById('message').innerHTML = '🤝 平局！'; endGame(); }
+            else if (gameState.player.hp === 0) { stats.losses++; document.getElementById('message').innerHTML = '😢 你输了！AI获胜！'; endGame(); }
+            else if (gameState.ai.hp === 0) { stats.wins++; document.getElementById('message').innerHTML = '🎉 恭喜！你赢了！'; endGame(); }
             updateDisplay();
         }
         function endGame() { gameState.gameOver = true; disableAllButtons(true); document.getElementById('restartBtn').style.display = 'block'; }
@@ -516,74 +450,39 @@
             disableAllButtons(false); updateButtonStates();
         }
         updateDisplay(); selectDifficulty('easy');
-        // ========== 单机模式结束 ==========
+        // ========== 单机结束 ==========
 
-        // ========== 联机模式 ==========
-        let onlineState = {
-            roomCode: null, myPlayer: null, round: 1,
-            myHp: 4, oppHp: 4, myEnergy: 0, oppEnergy: 0,
-            myUltUsed: false, oppUltUsed: false,
-            myBreakCd: false, oppBreakCd: false,
-            gameOver: false, polling: null
-        };
-
-        function generateRoomCode() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
-        }
-
+        // ========== 联机 ==========
+        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null };
+        function generateRoomCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
         async function createRoom() {
             const code = generateRoomCode();
             const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms`, {
                 method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify({
-                    room_code: code, status: 'waiting',
-                    player1_hp: 4, player2_hp: 4,
-                    player1_energy: 0, player2_energy: 0,
-                    player1_ult_used: false, player2_ult_used: false,
-                    player1_break_cd: false, player2_break_cd: false,
-                    round: 1
-                })
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ room_code: code, status: 'waiting', player1_hp: 4, player2_hp: 4, player1_energy: 0, player2_energy: 0, player1_ult_used: false, player2_ult_used: false, player1_break_cd: false, player2_break_cd: false, round: 1 })
             });
             if (res.ok) {
                 onlineState.roomCode = code;
                 onlineState.myPlayer = 'player1';
                 document.getElementById('onlineMenu').style.display = 'none';
                 document.getElementById('onlineGame').style.display = 'block';
-                document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<b style="font-size:24px;">${code}</b><br>等待对手加入...`;
+                document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<b>${code}</b><br>等待对手加入...`;
                 startPolling();
-            } else {
-                alert('创建房间失败，请重试');
-            }
+            } else { alert('创建房间失败'); }
         }
-
-        function showJoinInput() {
-            document.getElementById('joinInput').style.display = 'block';
-        }
-
+        function showJoinInput() { document.getElementById('joinInput').style.display = 'block'; }
         async function joinRoom() {
             const code = document.getElementById('roomCodeInput').value.trim();
             if (code.length !== 6) { alert('请输入6位房间号'); return; }
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${code}&status=eq.waiting`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${code}&status=eq.waiting`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             const data = await res.json();
             if (data.length === 0) { alert('房间不存在或已开始'); return; }
             onlineState.roomCode = code;
             onlineState.myPlayer = 'player2';
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${code}`, {
                 method: 'PATCH',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
                 body: JSON.stringify({ status: 'playing' })
             });
             document.getElementById('onlineMenu').style.display = 'none';
@@ -591,149 +490,97 @@
             document.getElementById('onlineMessage').textContent = '🎮 游戏开始！选择你的行动';
             startPolling();
         }
-
         function leaveRoom() {
             if (onlineState.polling) clearInterval(onlineState.polling);
             if (onlineState.roomCode) {
-                fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-                    method: 'DELETE',
-                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-                });
+                fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             }
-            onlineState = { roomCode: null, myPlayer: null, round: 1, myHp: 4, oppHp: 4, myEnergy: 0, oppEnergy: 0, myUltUsed: false, oppUltUsed: false, myBreakCd: false, oppBreakCd: false, gameOver: false, polling: null };
+            onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null };
             document.getElementById('onlineGame').style.display = 'none';
             document.getElementById('onlineMenu').style.display = 'block';
             document.getElementById('joinInput').style.display = 'none';
             document.getElementById('roomCodeInput').value = '';
         }
-
         function startPolling() {
             if (onlineState.polling) clearInterval(onlineState.polling);
             onlineState.polling = setInterval(pollRoom, 2000);
         }
-
         async function pollRoom() {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             const data = await res.json();
             if (data.length === 0) { leaveRoom(); return; }
             const room = data[0];
-            
-            // ========== 空闲房间5分钟自动解散 ==========
+            // ===== 5分钟自动解散 =====
             const createdTime = new Date(room.created_at).getTime();
-            const now = Date.now();
-            if (room.status === 'waiting' && (now - createdTime) > 300000) {
-                await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-                    method: 'DELETE',
-                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-                });
+            if (room.status === 'waiting' && (Date.now() - createdTime) > 300000) {
+                await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
                 leaveRoom();
-                alert('房间已超时解散，请重新创建');
+                alert('房间已超时解散');
                 return;
             }
-            // ========== 解散结束 ==========
-            
+            // ===== 解散结束 =====
             if (room.status === 'waiting') return;
-            
             onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
             onlineState.oppHp = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
             onlineState.myEnergy = onlineState.myPlayer === 'player1' ? room.player1_energy : room.player2_energy;
             onlineState.oppEnergy = onlineState.myPlayer === 'player1' ? room.player2_energy : room.player1_energy;
             onlineState.round = room.round;
-            
             updateOnlineDisplay();
-            
-            const actionsRes = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
+            const actionsRes = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             const actions = await actionsRes.json();
-            
             if (actions.length >= 2 && !onlineState.gameOver) {
-                const p1Action = actions.find(a => a.player === 'player1');
-                const p2Action = actions.find(a => a.player === 'player2');
-                if (p1Action && p2Action) {
-                    resolveOnlineRound(p1Action.action, p2Action.action);
-                }
+                const p1A = actions.find(a => a.player === 'player1');
+                const p2A = actions.find(a => a.player === 'player2');
+                if (p1A && p2A) resolveOnlineRound(p1A.action, p2A.action);
             }
         }
-
         async function onlineAction(action) {
             if (onlineState.gameOver) return;
             await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
                 method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify({
-                    room_code: onlineState.roomCode,
-                    player: onlineState.myPlayer,
-                    action: action,
-                    round: onlineState.round
-                })
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: onlineState.round })
             });
             document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
             document.querySelectorAll('#onlineActions button').forEach(btn => btn.disabled = true);
         }
-
-        function resolveOnlineRound(p1Action, p2Action) {
-            const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp,
-                         energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy };
-            const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp,
-                         energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy };
-            
-            let dmgToP1 = getDamage(p2Action);
-            let dmgToP2 = getDamage(p1Action);
-            if (p1Action === '完美绷住' || (p1Action === '轻松绷住' && p2Action === '破绷')) dmgToP1 = 0;
-            if (p2Action === '完美绷住' || (p2Action === '轻松绷住' && p1Action === '破绷')) dmgToP2 = 0;
-            
+        function resolveOnlineRound(p1A, p2A) {
+            const p1 = { hp: onlineState.myPlayer === 'player1' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player1' ? onlineState.myEnergy : onlineState.oppEnergy };
+            const p2 = { hp: onlineState.myPlayer === 'player2' ? onlineState.myHp : onlineState.oppHp, energy: onlineState.myPlayer === 'player2' ? onlineState.myEnergy : onlineState.oppEnergy };
+            let dmgToP1 = getDamage(p2A), dmgToP2 = getDamage(p1A);
+            if (p1A === '完美绷住' || (p1A === '轻松绷住' && p2A === '破绷')) dmgToP1 = 0;
+            if (p2A === '完美绷住' || (p2A === '轻松绷住' && p1A === '破绷')) dmgToP2 = 0;
             p1.hp = Math.max(0, p1.hp - dmgToP1);
             p2.hp = Math.max(0, p2.hp - dmgToP2);
-            
-            if (p1Action === '绷住') p1.energy = Math.min(3, p1.energy + 1);
-            if (p2Action === '绷住') p2.energy = Math.min(3, p2.energy + 1);
-            if (p1Action === '绷绷炸弹') p1.energy = Math.max(0, p1.energy - 2);
-            if (p2Action === '绷绷炸弹') p2.energy = Math.max(0, p2.energy - 2);
-            if (p1Action === '完美绷住') p1.energy = Math.max(0, p1.energy - 1);
-            if (p2Action === '完美绷住') p2.energy = Math.max(0, p2.energy - 1);
-            if (p1Action === '强绷') p1.energy = Math.min(3, p1.energy + 2);
-            if (p2Action === '强绷') p2.energy = Math.min(3, p2.energy + 2);
-            if (p1Action === '绷带') p1.hp = Math.min(4, p1.hp + 2);
-            if (p2Action === '绷带') p2.hp = Math.min(4, p2.hp + 2);
-            
+            if (p1A === '绷住') p1.energy = Math.min(3, p1.energy + 1);
+            if (p2A === '绷住') p2.energy = Math.min(3, p2.energy + 1);
+            if (p1A === '绷绷炸弹') p1.energy = Math.max(0, p1.energy - 2);
+            if (p2A === '绷绷炸弹') p2.energy = Math.max(0, p2.energy - 2);
+            if (p1A === '完美绷住') p1.energy = Math.max(0, p1.energy - 1);
+            if (p2A === '完美绷住') p2.energy = Math.max(0, p2.energy - 1);
+            if (p1A === '强绷') p1.energy = Math.min(3, p1.energy + 2);
+            if (p2A === '强绷') p2.energy = Math.min(3, p2.energy + 2);
+            if (p1A === '绷带') p1.hp = Math.min(4, p1.hp + 2);
+            if (p2A === '绷带') p2.hp = Math.min(4, p2.hp + 2);
             onlineState.myHp = onlineState.myPlayer === 'player1' ? p1.hp : p2.hp;
             onlineState.oppHp = onlineState.myPlayer === 'player1' ? p2.hp : p1.hp;
             onlineState.myEnergy = onlineState.myPlayer === 'player1' ? p1.energy : p2.energy;
             onlineState.oppEnergy = onlineState.myPlayer === 'player1' ? p2.energy : p1.energy;
             onlineState.round++;
-            
             updateOnlineDisplay();
             document.querySelectorAll('#onlineActions button').forEach(btn => btn.disabled = false);
-            
-            if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
-                document.getElementById('onlineMessage').textContent = '🤝 平局！';
-                onlineState.gameOver = true;
-            } else if (onlineState.myHp === 0) {
-                document.getElementById('onlineMessage').textContent = '😢 你输了！';
-                onlineState.gameOver = true;
-            } else if (onlineState.oppHp === 0) {
-                document.getElementById('onlineMessage').textContent = '🎉 你赢了！';
-                onlineState.gameOver = true;
-            } else {
-                document.getElementById('onlineMessage').textContent = `第${onlineState.round}回合，选择你的行动`;
-            }
+            if (onlineState.myHp === 0 && onlineState.oppHp === 0) { document.getElementById('onlineMessage').textContent = '🤝 平局！'; onlineState.gameOver = true; }
+            else if (onlineState.myHp === 0) { document.getElementById('onlineMessage').textContent = '😢 你输了！'; onlineState.gameOver = true; }
+            else if (onlineState.oppHp === 0) { document.getElementById('onlineMessage').textContent = '🎉 你赢了！'; onlineState.gameOver = true; }
+            else { document.getElementById('onlineMessage').textContent = `第${onlineState.round}回合，选择你的行动`; }
         }
-
         function updateOnlineDisplay() {
             document.getElementById('onlinePlayerHp').textContent = '❤️'.repeat(onlineState.myHp) + '🖤'.repeat(4 - onlineState.myHp);
             document.getElementById('onlineOpponentHp').textContent = '❤️'.repeat(onlineState.oppHp) + '🖤'.repeat(4 - onlineState.oppHp);
             document.getElementById('onlinePlayerEnergy').textContent = '⚡ 能量：' + onlineState.myEnergy;
             document.getElementById('onlineOpponentEnergy').textContent = '⚡ 能量：' + onlineState.oppEnergy;
         }
-        // ========== 联机模式结束 ==========
+        // ========== 联机结束 ==========
     </script>
 </body>
 </html>
