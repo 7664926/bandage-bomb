@@ -411,7 +411,7 @@
             <button class="close-rules-btn" onclick="toggleRules()">✅ 我知道了</button>
         </div>
     </div>
-
+    <script src="strategy.js"></script>
     <script>
         const SUPABASE_URL = 'https://xtblgsmyvewsytfhtzcy.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0Ymxnc215dmV3c3l0Zmh0emN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NDg5MjQsImV4cCI6MjEwMzEyNDkyNH0.kAnqMK2vabumCDgXZg09kgd3Zuz-B5RluZvNu9rAkH4';
@@ -525,49 +525,51 @@
             return opts[Math.floor(Math.random() * opts.length)];
         }
         function aiDecideHard() {
-            const ai = gameState.ai, player = gameState.player;
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-            if (!ai.ultUsed && ai.energy <= 1 && ai.hp > 2 && Math.random() < 0.6) return '强绷';
-            if (!ai.ultUsed && ai.hp <= 2 && player.energy >= 2 && Math.random() < 0.7) return '绷带';
-            if (player.energy >= 2 && ai.energy >= 1) {
-                if (ai.hp <= 3 && Math.random() < 0.7) return '完美绷住';
-                if (Math.random() < 0.3) return '完美绷住';
-            }
-            if (!player.lastUsedBreak && Math.random() < 0.08) return '轻松绷住';
-            if (ai.energy >= 2 && Math.random() < 0.55) return '绷绷炸弹';
-            if (!ai.lastUsedBreak && Math.random() < 0.45) return '破绷';
-            if (ai.energy < 2) return '绷住';
-            return '绷住';
-        }
+    return getOptimalAction();
+}
         function aiDecideLearning() {
-            const ai = gameState.ai, player = gameState.player;
-            const pattern = analyzePattern();
-            if (pattern && pattern.confidence > 0.35) {
-                if (pattern.action === '绷绷炸弹' && ai.energy >= 1) return '完美绷住';
-                if (pattern.action === '破绷' && !player.lastUsedBreak) return '轻松绷住';
-                if (pattern.action === '强绷') return '轻松绷住';
-                if (pattern.action === '绷带' && !ai.lastUsedBreak) return '破绷';
-                if (pattern.action === '绷住' && !ai.lastUsedBreak) return '破绷';
-                if (pattern.action === '轻松绷住' && ai.energy >= 2) return '绷绷炸弹';
-            }
-            if (player.hp <= 3 && ai.energy >= 2 && player.energy < 1) return '绷绷炸弹';
-            if (!ai.ultUsed && ai.energy <= 1 && ai.hp > 2 && Math.random() < 0.65) return '强绷';
-            if (!ai.ultUsed && ai.hp <= 2 && player.energy >= 2 && Math.random() < 0.75) return '绷带';
-            if (player.energy >= 2 && ai.energy >= 1) {
-                if (ai.hp <= 3 && Math.random() < 0.75) return '完美绷住';
-                if (Math.random() < 0.35) return '完美绷住';
-            }
-            if (aiMemory.lastPlayerActions.length > 8) {
-                const def = aiMemory.lastPlayerActions.filter(a => a === '轻松绷住' || a === '完美绷住').length;
-                if (def <= 2 && ai.energy >= 2 && Math.random() < 0.7) return '绷绷炸弹';
-                if (def > 5 && ai.energy >= 2) return '绷住';
-            }
-            if (!player.lastUsedBreak && Math.random() < 0.09) return '轻松绷住';
-            if (ai.energy >= 2 && Math.random() < 0.6) return '绷绷炸弹';
-            if (!ai.lastUsedBreak && Math.random() < 0.5) return '破绷';
+    const ai = gameState.ai, player = gameState.player;
+    
+    // 先分析玩家模式
+    const pattern = analyzePattern();
+    
+    // 如果发现玩家有明显规律（置信度>40%），用针对性反制
+    if (pattern && pattern.confidence > 0.4) {
+        const counter = getCounterAction(pattern.action, player, ai);
+        if (counter) return counter;
+    }
+    
+    // 否则使用最优策略查表
+    return getOptimalAction();
+}
+
+// 针对性反制逻辑
+function getCounterAction(playerAction, player, ai) {
+    switch(playerAction) {
+        case '绷绷炸弹':
+            if (ai.energy >= 1) return '完美绷住';
+            break;
+        case '破绷':
+            if (!player.lastUsedBreak) return '轻松绷住';
+            break;
+        case '强绷':
+            return '轻松绷住';
+            break;
+        case '绷带':
+            if (!ai.lastUsedBreak) return '破绷';
+            break;
+        case '绷住':
+            if (!ai.lastUsedBreak) return '破绷';
+            break;
+        case '轻松绷住':
+            if (ai.energy >= 2) return '绷绷炸弹';
+            break;
+        case '完美绷住':
             if (ai.energy < 2) return '绷住';
-            return '绷住';
-        }
+            break;
+    }
+    return null; // 不反制，走查表
+}
 
         function playerAction(action) {
             sendStats(action, 'single');
