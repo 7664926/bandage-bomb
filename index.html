@@ -9,99 +9,153 @@
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family:'Microsoft YaHei','PingFang SC',sans-serif;
-            background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+            background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a1a2e 100%);
             min-height:100vh; display:flex; justify-content:center; align-items:center;
             padding:10px; user-select:none; -webkit-tap-highlight-color:transparent;
+            position:relative; overflow:hidden;
+        }
+        body::before {
+            content:'';
+            position:absolute;
+            width:400px; height:400px;
+            background:radial-gradient(circle, rgba(0,255,255,0.12) 0%, transparent 70%);
+            border-radius:50%;
+            top:-100px; left:-100px;
+            pointer-events:none;
+        }
+        body::after {
+            content:'';
+            position:absolute;
+            width:350px; height:350px;
+            background:radial-gradient(circle, rgba(255,0,255,0.1) 0%, transparent 70%);
+            border-radius:50%;
+            bottom:-80px; right:-80px;
+            pointer-events:none;
         }
         .game-container {
-            background:linear-gradient(180deg,#1a1a2e,#16213e);
-            border-radius:20px; padding:15px; width:100%; max-width:460px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.5); border:2px solid #4a4a8a;
+            background:rgba(20,20,40,0.6);
+            backdrop-filter:blur(20px) saturate(180%);
+            -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(255,255,255,0.15);
+            border-radius:24px; padding:15px; width:100%; max-width:460px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 60px rgba(0,255,255,0.06);
             max-height:95vh; overflow-y:auto;
+            position:relative; z-index:1;
+        }
+        .game-container::before {
+            content:'';
+            position:absolute;
+            top:0; left:20%; right:20%;
+            height:1px;
+            background:linear-gradient(90deg, transparent, rgba(0,255,255,0.4), rgba(255,0,255,0.4), transparent);
         }
         .game-title {
-            text-align:center; font-size:22px; font-weight:bold; color:#ffd93d;
-            margin-bottom:8px; letter-spacing:2px; text-shadow:0 0 20px rgba(255,217,61,0.5);
+            text-align:center; font-size:22px; font-weight:bold; color:#ffffff;
+            margin-bottom:8px; letter-spacing:2px;
+            text-shadow:0 0 20px rgba(0,255,255,0.5), 0 0 40px rgba(255,0,255,0.25);
         }
         .mode-selector { display:flex; justify-content:center; gap:8px; margin-bottom:10px; }
         .mode-btn {
-            padding:8px 16px; border:2px solid #4a4a8a; border-radius:16px;
-            background:transparent; color:#e0e0e0; cursor:pointer; font-size:13px; font-weight:bold;
+            padding:8px 16px; border:1px solid rgba(255,255,255,0.2); border-radius:16px;
+            background:rgba(255,255,255,0.05); color:#e0e0e0; cursor:pointer; font-size:13px; font-weight:bold;
             transition:all 0.3s;
         }
         .mode-btn.active {
-            background:linear-gradient(135deg,#ffd93d,#ffaa00); border-color:#ffd93d;
-            color:#1a1a2e; box-shadow:0 4px 15px rgba(255,217,61,0.4);
+            background:linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
+            border-color:rgba(0,255,255,0.5); color:#ffffff;
+            box-shadow:0 4px 15px rgba(0,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
         }
         .difficulty-selector { display:flex; justify-content:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
         .difficulty-btn {
-            padding:6px 12px; border:2px solid #4a4a8a; border-radius:16px;
-            background:transparent; color:#e0e0e0; cursor:pointer; font-size:12px;
+            padding:6px 12px; border:1px solid rgba(255,255,255,0.2); border-radius:16px;
+            background:rgba(255,255,255,0.05); color:#e0e0e0; cursor:pointer; font-size:12px;
             transition:all 0.3s; font-weight:bold;
         }
         .difficulty-btn:hover { transform:translateY(-1px); }
         .difficulty-btn.active {
-            background:linear-gradient(135deg,#667eea,#764ba2); border-color:#667eea;
-            color:white; box-shadow:0 4px 15px rgba(102,126,234,0.4);
+            background:linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
+            border-color:rgba(0,255,255,0.5); color:#ffffff;
+            box-shadow:0 4px 15px rgba(0,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
         }
         .rules-modal {
             display:none; position:fixed; top:0; left:0; right:0; bottom:0;
-            background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; padding:20px;
+            background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center; padding:20px;
+            backdrop-filter:blur(5px);
+            -webkit-backdrop-filter:blur(5px);
         }
         .rules-modal.show { display:flex; }
         .rules-content {
-            background:linear-gradient(180deg,#1a1a2e,#16213e); border:2px solid #ffd93d;
+            background:rgba(20,20,40,0.9);
+            backdrop-filter:blur(20px) saturate(180%);
+            -webkit-backdrop-filter:blur(20px) saturate(180%);
+            border:1px solid rgba(0,255,255,0.3);
             border-radius:20px; padding:20px; max-width:400px; width:100%;
             max-height:80vh; overflow-y:auto; color:#e0e0e0;
+            box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 40px rgba(0,255,255,0.08);
         }
-        .rules-content h3 { color:#ffd93d; text-align:center; margin-bottom:15px; font-size:20px; }
-        .rules-content h4 { color:#6bff6b; margin:12px 0 5px; font-size:16px; }
+        .rules-content h3 { color:#00ffff; text-align:center; margin-bottom:15px; font-size:20px; text-shadow:0 0 15px rgba(0,255,255,0.5); }
+        .rules-content h4 { color:#6bffb8; margin:12px 0 5px; font-size:16px; text-shadow:0 0 10px rgba(107,255,184,0.4); }
         .rules-content p { font-size:13px; line-height:1.6; margin:3px 0; }
         .rules-content ul { padding-left:20px; font-size:13px; line-height:1.6; }
         .rules-content .action-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:12px; }
-        .rules-content .action-table th, .rules-content .action-table td { border:1px solid #4a4a8a; padding:6px; text-align:center; }
-        .rules-content .action-table th { background:rgba(102,126,234,0.3); color:#ffd93d; }
-        .close-rules-btn { width:100%; padding:10px; margin-top:15px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; }
-        .rules-toggle-btn { display:block; margin:0 auto 8px; padding:5px 12px; background:transparent; border:1px solid #ffd93d; color:#ffd93d; border-radius:15px; cursor:pointer; font-size:12px; }
+        .rules-content .action-table th, .rules-content .action-table td { border:1px solid rgba(255,255,255,0.15); padding:6px; text-align:center; }
+        .rules-content .action-table th { background:rgba(0,255,255,0.1); color:#00ffff; }
+        .close-rules-btn { width:100%; padding:10px; margin-top:15px; background:linear-gradient(135deg, rgba(0,255,255,0.3), rgba(255,0,255,0.3)); color:#ffffff; border:1px solid rgba(0,255,255,0.4); border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; }
+        .rules-toggle-btn { display:block; margin:0 auto 8px; padding:5px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,255,0.3); color:#00ffff; border-radius:15px; cursor:pointer; font-size:12px; }
         .player-info { text-align:center; padding:6px; border-radius:10px; margin:4px 0; }
-        .player-info.opponent { background:linear-gradient(135deg,#2d1b3d,#1a1a2e); border:1.5px solid #ff6b6b; }
-        .player-info.you { background:linear-gradient(135deg,#1b3d2d,#1a1a2e); border:1.5px solid #6bff6b; }
+        .player-info.opponent { background:rgba(255,0,0,0.08); border:1.5px solid rgba(255,107,107,0.5); }
+        .player-info.you { background:rgba(0,255,0,0.06); border:1.5px solid rgba(107,255,107,0.4); }
         .player-name { font-size:13px; font-weight:bold; margin-bottom:2px; color:#e0e0e0; }
-        .opponent .player-name { color:#ff6b6b; }
-        .you .player-name { color:#6bff6b; }
+        .opponent .player-name { color:#ff6b6b; text-shadow:0 0 10px rgba(255,107,107,0.5); }
+        .you .player-name { color:#6bffb8; text-shadow:0 0 10px rgba(107,255,184,0.5); }
         .hp { font-size:18px; margin:2px 0; letter-spacing:1px; }
-        .energy { font-size:13px; color:#ffd93d; margin:2px 0; }
+        .energy { font-size:13px; color:#00ffff; margin:2px 0; text-shadow:0 0 8px rgba(0,255,255,0.5); }
         .ai-status { font-size:10px; color:#ffa500; margin-top:1px; font-style:italic; }
         .battle-info {
-            text-align:center; padding:16px 12px; background:rgba(0,0,0,0.5);
+            text-align:center; padding:16px 12px; background:rgba(255,255,255,0.03);
             border-radius:14px; margin:10px 0; min-height:105px; display:flex;
             flex-direction:column; justify-content:center; align-items:center;
-            border:2px solid #ffd93d; box-shadow:0 4px 15px rgba(255,217,61,0.25);
+            border:1px solid rgba(0,255,255,0.2);
+            box-shadow:inset 0 0 20px rgba(0,255,255,0.04), 0 4px 15px rgba(0,0,0,0.2);
         }
-        #message, #onlineMessage { font-size:15px; color:#ffd93d; line-height:1.65; white-space:pre-line; font-weight:bold; }
-        .action-highlight { font-size:17px; font-weight:900; color:#ffffff; }
+        #message, #onlineMessage { font-size:15px; color:#ffffff; line-height:1.65; white-space:pre-line; font-weight:bold; text-shadow:0 0 10px rgba(0,255,255,0.3); }
+        .action-highlight { font-size:17px; font-weight:900; color:#00ffff; text-shadow:0 0 15px rgba(0,255,255,0.6); }
         .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
         .actions button {
-            padding:12px; font-size:16px; font-weight:bold; border:none; border-radius:12px;
-            background:linear-gradient(135deg,#667eea,#764ba2); color:white; cursor:pointer;
+            padding:12px; font-size:16px; font-weight:bold; border:1px solid rgba(0,255,255,0.25); border-radius:12px;
+            background:linear-gradient(135deg, rgba(0,255,255,0.12), rgba(255,0,255,0.12));
+            color:#ffffff; cursor:pointer;
             transition:all 0.3s; touch-action:manipulation;
+            box-shadow:0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
         }
-        .actions button:hover:not(:disabled) { transform:scale(1.03); }
-        .actions button:disabled { background:#2a2a3e; color:#555; opacity:0.35; cursor:not-allowed; }
+        .actions button:hover:not(:disabled) {
+            transform:scale(1.03);
+            background:linear-gradient(135deg, rgba(0,255,255,0.22), rgba(255,0,255,0.22));
+            border-color:rgba(0,255,255,0.5);
+            box-shadow:0 8px 25px rgba(0,0,0,0.3), 0 0 25px rgba(0,255,255,0.15);
+        }
+        .actions button:disabled { background:rgba(40,40,60,0.5); color:#555; opacity:0.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); }
         .actions button small { font-size:10px; opacity:0.8; display:block; margin-top:2px; }
         #btn-完美绷住, #onlineBtn-完美绷住 { grid-column: span 2; }
         .ultimate-btn {
             grid-column: span 2; display:flex; align-items:center; justify-content:center;
-            width:100%; padding:12px; font-size:16px; font-weight:bold; border:none;
-            border-radius:12px; background:linear-gradient(135deg,#f093fb,#f5576c);
-            color:white; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
+            width:100%; padding:12px; font-size:16px; font-weight:bold; border:1px solid rgba(255,0,255,0.3);
+            border-radius:12px;
+            background:linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15));
+            color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
+            box-shadow:0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
         }
-        .ultimate-btn:disabled { background:#2a2a3e; color:#555; opacity:0.35; cursor:not-allowed; }
+        .ultimate-btn:hover:not(:disabled) {
+            background:linear-gradient(135deg, rgba(255,0,255,0.25), rgba(255,107,107,0.25));
+            border-color:rgba(255,0,255,0.5);
+            box-shadow:0 8px 25px rgba(0,0,0,0.3), 0 0 25px rgba(255,0,255,0.15);
+        }
+        .ultimate-btn:disabled { background:rgba(40,40,60,0.5); color:#555; opacity:0.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); }
         .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#ffd93d; padding:0 6px; }
+        .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#00ffff; padding:0 6px; text-shadow:0 0 10px rgba(0,255,255,0.5); }
         .ultimate-btn small { font-size:10px; opacity:0.85; font-weight:normal; }
-        .restart-btn, .rematch-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#f093fb,#f5576c); color:white; border:none; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
-        .stats { display:flex; justify-content:space-around; margin-top:8px; padding:6px; background:rgba(0,0,0,0.2); border-radius:10px; font-size:11px; color:#e0e0e0; }
+        .restart-btn, .rematch-btn { width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg, rgba(255,0,255,0.25), rgba(255,107,107,0.25)); color:#ffffff; border:1px solid rgba(255,0,255,0.4); border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; display:none; }
+        .stats { display:flex; justify-content:space-around; margin-top:8px; padding:6px; background:rgba(255,255,255,0.03); border-radius:10px; font-size:11px; color:#e0e0e0; }
 
         .online-panel { display:none; }
         .online-panel.active { display:block; }
@@ -109,12 +163,13 @@
         .single-panel { display:none; }
         .room-btn-row { display:flex; gap:8px; margin:5px 0; }
         .room-btn { flex:1; padding:12px; font-size:14px; font-weight:bold; border:none; border-radius:10px; cursor:pointer; }
-        .room-btn.create { background:linear-gradient(135deg,#667eea,#764ba2); color:white; }
-        .room-btn.join { background:linear-gradient(135deg,#f093fb,#f5576c); color:white; }
-        .room-input { width:100%; padding:10px; font-size:16px; border:2px solid #4a4a8a; border-radius:10px; background:#1a1a2e; color:#ffd93d; text-align:center; margin:5px 0; outline:none; }
+        .room-btn.create { background:linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25)); color:#ffffff; border:1px solid rgba(0,255,255,0.4); }
+        .room-btn.join { background:linear-gradient(135deg, rgba(255,0,255,0.25), rgba(255,107,107,0.25)); color:#ffffff; border:1px solid rgba(255,0,255,0.4); }
+        .room-input { width:100%; padding:10px; font-size:16px; border:1px solid rgba(0,255,255,0.3); border-radius:10px; background:rgba(20,20,40,0.7); color:#00ffff; text-align:center; margin:5px 0; outline:none; }
+        .room-input:focus { border-color:rgba(0,255,255,0.6); box-shadow:0 0 15px rgba(0,255,255,0.15); }
         .confirm-btn-wrapper { display:flex; justify-content:center; }
         .confirm-btn-wrapper .room-btn { flex:none; width:60%; }
-        .leave-btn { width:100%; padding:8px; margin-bottom:10px; background:#ff4444; color:white; border:none; border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold; }
+        .leave-btn { width:100%; padding:8px; margin-bottom:10px; background:rgba(255,68,68,0.3); color:#ff6b6b; border:1px solid rgba(255,68,68,0.4); border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold; }
     </style>
 </head>
 <body>
@@ -605,7 +660,6 @@
                         status: 'playing'
                     })
                 });
-                // 清除所有旧的action记录
                 await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}`, {
                     method: 'DELETE',
                     headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
@@ -644,7 +698,6 @@
             const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
             document.getElementById('onlineOpponentName').textContent = '👤 ' + oppNickname;
 
-            // 使用room.round来查询action，确保查询的是当前回合
             const currentRound = room.round;
             const myActionsRes = await fetch(
                 `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${currentRound}&player=eq.${onlineState.myPlayer}`,
@@ -827,13 +880,11 @@
             const player1Break = onlineState.myPlayer === 'player1' ? (myAction === '破绷') : (oppAction === '破绷');
             const player2Break = onlineState.myPlayer === 'player1' ? (oppAction === '破绷') : (myAction === '破绷');
 
-            // 先删除当前回合的action记录
             await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
                 method: 'DELETE',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
 
-            // 再更新房间状态
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
                 method: 'PATCH',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
