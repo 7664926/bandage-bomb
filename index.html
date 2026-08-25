@@ -530,6 +530,23 @@
             const opts = ['绷住']; if (!ai.lastUsedBreak) opts.push('破绷'); if (ai.energy >= 2) opts.push('绷绷炸弹'); if (ai.energy >= 1) opts.push('完美绷住');
             return opts[Math.floor(Math.random() * opts.length)];
         }
+        function getOptimalAction() {
+    const p = gameState.player, a = gameState.ai;
+    const key = `${p.hp}${a.hp}${p.energy}${a.energy}${p.lastUsedBreak?'是':'否'}${a.lastUsedBreak?'是':'否'}${p.ultUsed?'是':'否'}${a.ultUsed?'是':'否'}`;
+    
+    const probs = OPTIMAL_STRATEGY[key];
+    if (!probs) return '绷住';
+    
+    const actions = ['绷住', '破绷', '绷绷炸弹', '轻松绷住', '完美绷住', '强绷', '绷带'];
+    const r = Math.random();
+    let cum = 0;
+    for (let i = 0; i < actions.length; i++) {
+        cum += probs[i];
+        if (r < cum) return actions[i];
+    }
+    return '绷住';
+}
+
         function aiDecideHard() {
     return getOptimalAction();
 }
