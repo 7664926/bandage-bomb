@@ -442,14 +442,20 @@
         let aiMemory = { playerPatterns:{}, lastPlayerActions:[] };
         const difficultyConfig = { easy:{name:'简单'}, normal:{name:'普通'}, hard:{name:'困难'}, learning:{name:'学习'} };
 
-        function selectDifficulty(diff) {
-            difficulty = diff;
-            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-difficulty="${diff}"]`).classList.add('active');
-            document.getElementById('aiStatus').textContent = `难度：${difficultyConfig[diff].name}`;
-            if (diff === 'learning') resetLearning();
-            document.getElementById('message').innerHTML = `难度已切换为：${difficultyConfig[diff].name}<br>选择你的行动`;
-        }
+       function selectDifficulty(diff) {
+    difficulty = diff;
+    document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-difficulty="${diff}"]`).classList.add('active');
+    document.getElementById('aiStatus').textContent = `难度：${difficultyConfig[diff].name}`;
+    if (diff === 'learning') resetLearning();
+    
+    // 重置游戏状态
+    gameState = { player:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, ai:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, round:1, gameOver:false, isProcessing:false };
+    document.getElementById('message').innerHTML = `难度已切换为：${difficultyConfig[diff].name}<br>选择你的行动`;
+    document.getElementById('restartBtn').style.display = 'none';
+    updateDisplay();
+    disableAllButtons(false);
+}
         function resetLearning() { aiMemory = { playerPatterns:{}, lastPlayerActions:[] }; }
         function updateButtonStates() {
             const p = gameState.player;
