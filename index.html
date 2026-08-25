@@ -644,22 +644,25 @@
             const myActions = await myActionsRes.json();
 
             if (myActions.length === 0) {
-                onlineState.myActionSubmitted = false;
-                if (room.status === 'playing' && !onlineState.gameOver) {
-                    if (onlineState.round === 1) {
-                        document.getElementById('onlineMessage').textContent = '选择你的行动';
-                    } else if (lastRoundMessage) {
-                        document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+                if (!onlineState.myActionSubmitted) {
+                    onlineState.myActionSubmitted = false;
+                    if (room.status === 'playing' && !onlineState.gameOver) {
+                        if (onlineState.round === 1) {
+                            document.getElementById('onlineMessage').textContent = '选择你的行动';
+                        } else if (lastRoundMessage) {
+                            document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+                        }
                     }
+                    updateOnlineButtonStates();
                 }
             } else {
                 onlineState.myActionSubmitted = true;
                 if (room.status === 'playing' && !onlineState.gameOver) {
                     document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
                 }
+                updateOnlineButtonStates();
             }
 
-            updateOnlineButtonStates();
             updateOnlineDisplay();
 
             const actionsRes = await fetch(
@@ -679,15 +682,30 @@
 
         async function onlineAction(action) {
             if (onlineState.gameOver || onlineState.myActionSubmitted) return;
-            sendStats(action, 'online');
             onlineState.myActionSubmitted = true;
             updateOnlineButtonStates();
-            await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
-                method: 'POST',
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: onlineState.round })
-            });
-            document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                    body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: onlineState.round })
+                });
+
+                if (!res.ok) {
+                    onlineState.myActionSubmitted = false;
+                    updateOnlineButtonStates();
+                    alert('出招失败，请重试');
+                    return;
+                }
+
+                sendStats(action, 'online');
+                document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
+            } catch (e) {
+                onlineState.myActionSubmitted = false;
+                updateOnlineButtonStates();
+                alert('网络错误，请重试');
+            }
         }
 
         async function requestRematch() {
