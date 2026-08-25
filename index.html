@@ -619,6 +619,7 @@
                 onlineState.rematchRequested = false;
                 lastRoundMessage = '';
                 document.getElementById('rematchBtn').style.display = 'none';
+                document.getElementById('rematchBtn').disabled = false;
                 document.getElementById('onlineMessage').textContent = '🎮 再来一把！选择你的行动';
                 updateOnlineDisplay();
                 updateOnlineButtonStates();
@@ -632,6 +633,7 @@
             onlineState.myUltUsed = onlineState.myPlayer === 'player1' ? room.player1_ult_used : room.player2_ult_used;
             onlineState.oppUltUsed = onlineState.myPlayer === 'player1' ? room.player2_ult_used : room.player1_ult_used;
             onlineState.myBreakCd = onlineState.myPlayer === 'player1' ? room.player1_break_cd : room.player2_break_cd;
+            onlineState.oppBreakCd = onlineState.myPlayer === 'player1' ? room.player2_break_cd : room.player1_break_cd;
             onlineState.round = room.round;
 
             const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
@@ -834,6 +836,12 @@
                     player2_break_cd: player2Break,
                     round: onlineState.round
                 })
+            });
+
+            // 删除已处理的action记录，防止旧action干扰新回合
+            await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round - 1}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
 
             updateOnlineDisplay();
