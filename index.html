@@ -605,6 +605,11 @@
                         status: 'playing'
                     })
                 });
+                // 清除所有旧的action记录
+                await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
                 onlineState.myHp = 4;
                 onlineState.oppHp = 4;
                 onlineState.myEnergy = 0;
@@ -639,24 +644,24 @@
             const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
             document.getElementById('onlineOpponentName').textContent = '👤 ' + oppNickname;
 
+            // 使用room.round来查询action，确保查询的是当前回合
+            const currentRound = room.round;
             const myActionsRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`,
+                `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${currentRound}&player=eq.${onlineState.myPlayer}`,
                 { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
             );
             const myActions = await myActionsRes.json();
 
             if (myActions.length === 0) {
-                if (!onlineState.myActionSubmitted) {
-                    onlineState.myActionSubmitted = false;
-                    if (room.status === 'playing' && !onlineState.gameOver) {
-                        if (onlineState.round === 1) {
-                            document.getElementById('onlineMessage').textContent = '选择你的行动';
-                        } else if (lastRoundMessage) {
-                            document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
-                        }
+                onlineState.myActionSubmitted = false;
+                if (room.status === 'playing' && !onlineState.gameOver) {
+                    if (currentRound === 1) {
+                        document.getElementById('onlineMessage').textContent = '选择你的行动';
+                    } else if (lastRoundMessage) {
+                        document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
                     }
-                    updateOnlineButtonStates();
                 }
+                updateOnlineButtonStates();
             } else {
                 onlineState.myActionSubmitted = true;
                 if (room.status === 'playing' && !onlineState.gameOver) {
@@ -668,7 +673,7 @@
             updateOnlineDisplay();
 
             const actionsRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}`,
+                `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${currentRound}`,
                 { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
             );
             const actions = await actionsRes.json();
@@ -677,7 +682,7 @@
                 const p1A = actions.find(a => a.player === 'player1');
                 const p2A = actions.find(a => a.player === 'player2');
                 if (p1A && p2A) {
-                    await resolveOnlineRound(p1A.action, p2A.action);
+                    await resolveOnlineRound(p1A.action, p2A.action, currentRound);
                 }
             }
         }
@@ -723,7 +728,7 @@
             document.getElementById('onlineMessage').textContent = '⏳ 等待对手同意再来一把...';
         }
 
-        async function resolveOnlineRound(p1A, p2A) {
+        async function resolveOnlineRound(p1A, p2A, roundNum) {
             const me = {
                 hp: onlineState.myHp,
                 energy: onlineState.myEnergy,
@@ -810,7 +815,7 @@
             onlineState.myBreakCd = (myAction === '破绷');
             onlineState.oppBreakCd = (oppAction === '破绷');
 
-            onlineState.round++;
+            onlineState.round = roundNum + 1;
             onlineState.myActionSubmitted = false;
 
             const player1Hp = onlineState.myPlayer === 'player1' ? me.hp : opp.hp;
@@ -822,6 +827,13 @@
             const player1Break = onlineState.myPlayer === 'player1' ? (myAction === '破绷') : (oppAction === '破绷');
             const player2Break = onlineState.myPlayer === 'player1' ? (oppAction === '破绷') : (myAction === '破绷');
 
+            // 先删除当前回合的action记录
+            await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
+
+            // 再更新房间状态
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
                 method: 'PATCH',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -834,14 +846,8 @@
                     player2_ult_used: player2Ult,
                     player1_break_cd: player1Break,
                     player2_break_cd: player2Break,
-                    round: onlineState.round
+                    round: roundNum + 1
                 })
-            });
-
-            // 删除已处理的action记录，防止旧action干扰新回合
-            await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round - 1}`, {
-                method: 'DELETE',
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
 
             updateOnlineDisplay();
@@ -885,6 +891,7 @@
             if (onlineState.gameOver) {
                 document.getElementById('rematchBtn').style.display = 'block';
                 document.getElementById('rematchBtn').disabled = false;
+                updateOnlineButtonStates();
             }
         }
 
