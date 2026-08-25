@@ -102,7 +102,7 @@
         .rules-content .action-table th { background:rgba(0,255,255,0.1); color:#00ffff; }
         .close-rules-btn { width:100%; padding:10px; margin-top:15px; background:linear-gradient(135deg, rgba(0,255,255,0.3), rgba(255,0,255,0.3)); color:#ffffff; border:1px solid rgba(0,255,255,0.4); border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; }
         .rules-toggle-btn { display:block; margin:0 auto 8px; padding:5px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,255,0.3); color:#00ffff; border-radius:15px; cursor:pointer; font-size:12px; }
-        .player-info { text-align:center; padding:6px; border-radius:10px; margin:4px 0; }
+        .player-info { text-align:center; padding:6px; border-radius:10px; margin:4px 0; position:relative; }
         .player-info.opponent { background:rgba(255,0,0,0.08); border:1.5px solid rgba(255,107,107,0.5); }
         .player-info.you { background:rgba(0,255,0,0.06); border:1.5px solid rgba(107,255,107,0.4); }
         .player-name { font-size:13px; font-weight:bold; margin-bottom:2px; color:#e0e0e0; }
@@ -145,11 +145,6 @@
             color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
             box-shadow:0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
         }
-        .ultimate-btn:hover:not(:disabled) {
-            background:linear-gradient(135deg, rgba(255,0,255,0.25), rgba(255,107,107,0.25));
-            border-color:rgba(255,0,255,0.5);
-            box-shadow:0 8px 25px rgba(0,0,0,0.3), 0 0 25px rgba(255,0,255,0.15);
-        }
         .ultimate-btn:disabled { background:rgba(40,40,60,0.5); color:#555; opacity:0.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); }
         .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#00ffff; padding:0 6px; text-shadow:0 0 10px rgba(0,255,255,0.5); }
@@ -170,6 +165,101 @@
         .confirm-btn-wrapper { display:flex; justify-content:center; }
         .confirm-btn-wrapper .room-btn { flex:none; width:60%; }
         .leave-btn { width:100%; padding:8px; margin-bottom:10px; background:rgba(255,68,68,0.3); color:#ff6b6b; border:1px solid rgba(255,68,68,0.4); border-radius:10px; cursor:pointer; font-size:13px; font-weight:bold; }
+        
+        /* ===== 表情包功能样式 ===== */
+        .emote-float {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 32px;
+            animation: emoteFloat 2s ease-out forwards;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .emote-float.mine {
+            right: 25px;
+            animation: emoteFloatMine 2s ease-out forwards;
+        }
+        .emote-float.opponent {
+            left: 25px;
+            animation: emoteFloatOpponent 2s ease-out forwards;
+        }
+        @keyframes emoteFloatMine {
+            0% { opacity: 0; transform: translateY(-50%) scale(0); }
+            15% { opacity: 1; transform: translateY(-50%) scale(1.3); }
+            30% { transform: translateY(-50%) scale(1); }
+            70% { opacity: 1; transform: translateY(-50%) scale(1) translateX(-5px); }
+            100% { opacity: 0; transform: translateY(-50%) scale(0.6) translateX(-15px); }
+        }
+        @keyframes emoteFloatOpponent {
+            0% { opacity: 0; transform: translateY(-50%) scale(0); }
+            15% { opacity: 1; transform: translateY(-50%) scale(1.3); }
+            30% { transform: translateY(-50%) scale(1); }
+            70% { opacity: 1; transform: translateY(-50%) scale(1) translateX(5px); }
+            100% { opacity: 0; transform: translateY(-50%) scale(0.6) translateX(15px); }
+        }
+        .emote-btn-row {
+            display: flex;
+            justify-content: center;
+            margin: 8px 0;
+        }
+        .emote-toggle-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(0,255,255,0.3);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            color: #00ffff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .emote-toggle-btn:hover {
+            background: rgba(0,255,255,0.15);
+            border-color: rgba(0,255,255,0.5);
+            box-shadow: 0 0 15px rgba(0,255,255,0.2);
+        }
+        .emote-toggle-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .emote-panel {
+            display: none;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px;
+            background: rgba(20,20,40,0.9);
+            border: 1px solid rgba(0,255,255,0.3);
+            border-radius: 16px;
+            margin: 8px 0;
+            animation: panelSlide 0.3s ease-out;
+        }
+        .emote-panel.show {
+            display: grid;
+        }
+        @keyframes panelSlide {
+            0% { transform: translateY(-10px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .emote-option {
+            font-size: 32px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .emote-option:hover {
+            background: rgba(0,255,255,0.15);
+            border-color: rgba(0,255,255,0.5);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0,255,255,0.2);
+        }
+        .emote-option:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -238,13 +328,31 @@
             </div>
             <div id="onlineGame" style="display:none;">
                 <button class="leave-btn" onclick="leaveRoom()">🚪 退出房间</button>
-                <div class="player-info opponent">
+                <div class="player-info opponent" id="onlineOpponentInfo">
                     <div class="player-name" id="onlineOpponentName">👤 对手</div>
                     <div class="hp" id="onlineOpponentHp">❤️❤️❤️❤️</div>
                     <div class="energy" id="onlineOpponentEnergy">⚡ 能量：0</div>
                 </div>
                 <div class="battle-info"><div id="onlineMessage">等待对手...</div></div>
-                <div class="player-info you">
+                
+                <!-- 表情包按钮 -->
+                <div class="emote-btn-row">
+                    <button class="emote-toggle-btn" id="emoteToggleBtn" onclick="toggleEmotePanel()">😊 发送表情</button>
+                </div>
+                
+                <!-- 表情包选择面板 -->
+                <div class="emote-panel" id="emotePanel">
+                    <div class="emote-option" onclick="sendEmote('🤣')">🤣</div>
+                    <div class="emote-option" onclick="sendEmote('😆')">😆</div>
+                    <div class="emote-option" onclick="sendEmote('😇')">😇</div>
+                    <div class="emote-option" onclick="sendEmote('🙂')">🙂</div>
+                    <div class="emote-option" onclick="sendEmote('😘')">😘</div>
+                    <div class="emote-option" onclick="sendEmote('😡')">😡</div>
+                    <div class="emote-option" onclick="sendEmote('💀')">💀</div>
+                    <div class="emote-option" onclick="sendEmote('😭')">😭</div>
+                </div>
+                
+                <div class="player-info you" id="onlinePlayerInfo">
                     <div class="player-name" id="onlinePlayerName">😊 你</div>
                     <div class="hp" id="onlinePlayerHp">❤️❤️❤️❤️</div>
                     <div class="energy" id="onlinePlayerEnergy">⚡ 能量：0</div>
@@ -542,6 +650,8 @@
         let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
         let lastRoundMessage = '';
         let sessionNickname = '';
+        let myEmoteActive = false;
+        let lastEmoteTimestamp = 0;
 
         function generateRoomCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
@@ -608,11 +718,18 @@
             }
             onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
             lastRoundMessage = '';
+            myEmoteActive = false;
+            lastEmoteTimestamp = 0;
             document.getElementById('onlineGame').style.display = 'none';
             document.getElementById('onlineMenu').style.display = 'block';
             document.getElementById('joinInput').style.display = 'none';
             document.getElementById('roomCodeInput').value = '';
             document.getElementById('rematchBtn').style.display = 'none';
+            document.getElementById('rematchBtn').disabled = false;
+            document.getElementById('emoteToggleBtn').disabled = false;
+            document.getElementById('emotePanel').classList.remove('show');
+            // 清除表情包
+            document.querySelectorAll('.emote-float').forEach(el => el.remove());
         }
 
         function startPolling() {
@@ -628,6 +745,59 @@
             document.getElementById('onlineBtn-轻松绷住').disabled = onlineState.gameOver || onlineState.myActionSubmitted;
             document.getElementById('onlineBtn-完美绷住').disabled = onlineState.gameOver || onlineState.myActionSubmitted || myEnergy < 1;
             document.getElementById('onlineUltimateBtn').disabled = onlineState.gameOver || onlineState.myActionSubmitted || onlineState.myUltUsed;
+        }
+
+        // ===== 表情包功能 =====
+        function toggleEmotePanel() {
+            document.getElementById('emotePanel').classList.toggle('show');
+        }
+
+        function sendEmote(emote) {
+            if (myEmoteActive) return;
+            
+            myEmoteActive = true;
+            lastEmoteTimestamp = Date.now();
+            
+            const playerInfo = document.getElementById('onlinePlayerInfo');
+            const oldEmote = playerInfo.querySelector('.emote-float');
+            if (oldEmote) oldEmote.remove();
+            
+            const emoteFloat = document.createElement('div');
+            emoteFloat.className = 'emote-float mine';
+            emoteFloat.textContent = emote;
+            playerInfo.appendChild(emoteFloat);
+            
+            document.getElementById('emoteToggleBtn').disabled = true;
+            
+            setTimeout(() => {
+                emoteFloat.remove();
+                myEmoteActive = false;
+                document.getElementById('emoteToggleBtn').disabled = false;
+            }, 2000);
+            
+            document.getElementById('emotePanel').classList.remove('show');
+            
+            // 发送表情包到数据库
+            fetch(`${SUPABASE_URL}/rest/v1/room_emotes`, {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, emote: emote, created_at: new Date().toISOString() })
+            }).catch(e => console.log('表情包发送失败:', e));
+        }
+
+        function displayOpponentEmote(emote) {
+            const opponentInfo = document.getElementById('onlineOpponentInfo');
+            const oldEmote = opponentInfo.querySelector('.emote-float');
+            if (oldEmote) oldEmote.remove();
+            
+            const emoteFloat = document.createElement('div');
+            emoteFloat.className = 'emote-float opponent';
+            emoteFloat.textContent = emote;
+            opponentInfo.appendChild(emoteFloat);
+            
+            setTimeout(() => {
+                emoteFloat.remove();
+            }, 2000);
         }
 
         async function pollRoom() {
@@ -664,6 +834,10 @@
                     method: 'DELETE',
                     headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
                 });
+                await fetch(`${SUPABASE_URL}/rest/v1/room_emotes?room_code=eq.${onlineState.roomCode}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
                 onlineState.myHp = 4;
                 onlineState.oppHp = 4;
                 onlineState.myEnergy = 0;
@@ -677,8 +851,10 @@
                 onlineState.myActionSubmitted = false;
                 onlineState.rematchRequested = false;
                 lastRoundMessage = '';
+                myEmoteActive = false;
                 document.getElementById('rematchBtn').style.display = 'none';
                 document.getElementById('rematchBtn').disabled = false;
+                document.getElementById('emoteToggleBtn').disabled = false;
                 document.getElementById('onlineMessage').textContent = '🎮 再来一把！选择你的行动';
                 updateOnlineDisplay();
                 updateOnlineButtonStates();
@@ -697,6 +873,22 @@
 
             const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
             document.getElementById('onlineOpponentName').textContent = '👤 ' + oppNickname;
+
+            // 查询对手的表情包
+            const oppPlayer = onlineState.myPlayer === 'player1' ? 'player2' : 'player1';
+            const emotesRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/room_emotes?room_code=eq.${onlineState.roomCode}&player=eq.${oppPlayer}&created_at=gt.${new Date(Date.now() - 3000).toISOString()}`,
+                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+            );
+            const emotes = await emotesRes.json();
+            if (emotes.length > 0) {
+                const latestEmote = emotes[emotes.length - 1];
+                const emoteTime = new Date(latestEmote.created_at).getTime();
+                if (emoteTime > lastEmoteTimestamp) {
+                    lastEmoteTimestamp = emoteTime;
+                    displayOpponentEmote(latestEmote.emote);
+                }
+            }
 
             const currentRound = room.round;
             const myActionsRes = await fetch(
