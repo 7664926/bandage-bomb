@@ -715,9 +715,9 @@
             if (pa === '完美绷住' || (pa === '轻松绷住' && aa === '破绷')) dmgToPlayer = 0;
             let ultBlockedP = false, ultBlockedAI = false;
             if (pa === '强绷') { if (aa === '轻松绷住') ultBlockedP = true; else egP = 2; }
-            if (pa === '绷带') { if (aa === '破绷') ultBlockedP = true; else healToPlayer = Math.min(2, MAX_HP - playerHpBefore); }
+            if (pa === '绷带') { if (aa === '破绷') ultBlockedP = true; else healToPlayer = 2; }
             if (aa === '强绷') { if (pa === '轻松绷住') ultBlockedAI = true; else egA = 2; }
-            if (aa === '绷带') { if (pa === '破绷') ultBlockedAI = true; else healToAI = Math.min(2, MAX_HP - aiHpBefore); }
+            if (aa === '绷带') { if (pa === '破绷') ultBlockedAI = true; else healToAI = 2; }
             if (pa === '绷住') egP = 1;
             if (pa === '绷绷炸弹') egP = -2;
             if (pa === '完美绷住') egP = -1;
@@ -737,11 +737,13 @@
             gameState.ai.lastUsedBreak = (aa === '破绷');
 
             let msg = `第${gameState.round}回合<br>你「<span class="action-highlight">${pa}</span>」 vs AI「<span class="action-highlight">${aa}</span>」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
-            if (healToPlayer > 0 || healToAI > 0) {
-                if (healToPlayer > 0 && healToAI > 0) msg += `<br>你回复${healToPlayer}血，AI回复${healToAI}血`;
-                else if (healToPlayer > 0) msg += `<br>你回复了${healToPlayer}血`;
-                else msg += `<br>AI回复了${healToAI}血`;
-            }
+            const actualHealToPlayer = Math.max(0, gameState.player.hp - (playerHpBefore - dmgToPlayer));
+const actualHealToAI = Math.max(0, gameState.ai.hp - (aiHpBefore - dmgToAI));
+if (actualHealToPlayer > 0 || actualHealToAI > 0) {
+    if (actualHealToPlayer > 0 && actualHealToAI > 0) msg += `<br>你回复${actualHealToPlayer}血，AI回复${actualHealToAI}血`;
+    else if (actualHealToPlayer > 0) msg += `<br>你回复了${actualHealToPlayer}血`;
+    else msg += `<br>AI回复了${actualHealToAI}血`;
+}
             if (ultBlockedP) msg += `<br>💥 你的大招被克制！`;
             if (ultBlockedAI) msg += `<br>💥 AI的大招被克制！`;
             document.getElementById('message').innerHTML = msg;
@@ -1132,18 +1134,18 @@
                 else egMe = 2;
             }
             if (myAction === '绷带') {
-                if (oppAction === '破绷') myUltBlocked = true;
-                else healToMe = Math.min(2, MAX_HP - me.hp);
-            }
+    if (oppAction === '破绷') myUltBlocked = true;
+    else healToMe = 2;
+}
 
             if (oppAction === '强绷') {
                 if (myAction === '轻松绷住') oppUltBlocked = true;
                 else egOpp = 2;
             }
             if (oppAction === '绷带') {
-                if (myAction === '破绷') oppUltBlocked = true;
-                else healToOpp = Math.min(2, MAX_HP - opp.hp);
-            }
+    if (myAction === '破绷') oppUltBlocked = true;
+    else healToOpp = 2;
+}
 
             if (myAction === '绷住') egMe = 1;
             if (myAction === '绷绷炸弹') egMe = -2;
@@ -1211,9 +1213,9 @@
             updateOnlineButtonStates();
 
             const myDmg = dmgToMe;
-            const oppDmg = dmgToOpp;
-            const myHeal = healToMe;
-            const oppHeal = healToOpp;
+const oppDmg = dmgToOpp;
+const myHeal = Math.max(0, me.hp - (onlineState.myHp - dmgToMe));
+const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
 
             let msg = `上回合：你「<span class="action-highlight">${myAction}</span>」 vs 对手「<span class="action-highlight">${oppAction}</span>」<br>`;
             msg += `你受到${myDmg}伤害，对手受到${oppDmg}伤害`;
