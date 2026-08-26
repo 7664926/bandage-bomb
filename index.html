@@ -315,8 +315,18 @@
 </head>
 <body>
     <div class="game-container">
-        <div class="game-title">💣 绷绷炸弹 💣</div>
-        <div class="mode-selector">
+    <div class="game-title">💣 绷绷炸弹 💣</div>
+    <div id="authPanel" style="margin-bottom:10px;">
+        <div style="text-align:center; font-size:13px; color:#e0e0e0; margin-bottom:5px;" id="authStatus">未登录</div>
+        <input class="room-input" id="authUsername" placeholder="用户名" maxlength="20" style="margin:3px 0;">
+        <input class="room-input" id="authPassword" placeholder="密码" type="password" maxlength="30" style="margin:3px 0;">
+        <div style="display:flex; gap:6px; margin:5px 0;">
+            <button class="room-btn create" onclick="registerAccount()" style="font-size:12px; padding:8px; flex:1;">注册</button>
+            <button class="room-btn join" onclick="loginAccount()" style="font-size:12px; padding:8px; flex:1;">登录</button>
+            <button class="room-btn" onclick="logoutAccount()" style="font-size:12px; padding:8px; flex:1; background:rgba(255,255,255,0.1); color:#e0e0e0; border:1px solid rgba(255,255,255,0.3);">退出</button>
+        </div>
+    </div>
+    <div class="mode-selector">
             <button class="mode-btn active" id="modeSingleBtn" onclick="switchMode('single')">🤖 单机</button>
             <button class="mode-btn" id="modeOnlineBtn" onclick="switchMode('online')">🌐 联机</button>
         </div>
@@ -874,9 +884,9 @@ if (actualHealToPlayer > 0 || actualHealToAI > 0) {
             if (!disabled) updateButtonStates();
         }
         function checkGameOver() {
-            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats[difficulty].draws++; document.getElementById('message').innerHTML = '<span class="big-message">🤝 平局。旗鼓相当的对手。</span>'; endGame(); }
-else if (gameState.player.hp === 0) { stats[difficulty].losses++; document.getElementById('message').innerHTML = '<span class="big-message">😢 遗憾落败......</span>'; endGame(); }
-else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementById('message').innerHTML = '<span class="big-message">🎉 恭喜！大获全胜！</span>'; endGame(); }
+            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats[difficulty].draws++; document.getElementById('message').innerHTML = '<span class="big-message">🤝 平局。旗鼓相当的对手。</span>'; saveUserData(); endGame(); }
+else if (gameState.player.hp === 0) { stats[difficulty].losses++; document.getElementById('message').innerHTML = '<span class="big-message">😢 遗憾落败......</span>';  saveUserData();endGame(); }
+else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementById('message').innerHTML = '<span class="big-message">🎉 恭喜！大获全胜！</span>';  saveUserData();endGame(); }
             updateDisplay();
         }
         function endGame() { gameState.gameOver = true; disableAllButtons(true); document.getElementById('restartBtn').style.display = 'block'; }
@@ -887,6 +897,15 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             document.getElementById('restartBtn').style.display = 'none';
             disableAllButtons(false); updateButtonStates();
         }
+        // 自动登录恢复
+const savedUserId = localStorage.getItem('userId');
+const savedUsername = localStorage.getItem('username');
+if (savedUserId && savedUsername) {
+    document.getElementById('authStatus').textContent = `✅ 已登录：${savedUsername}`;
+    document.getElementById('nicknameInput').value = savedUsername;
+    sessionNickname = savedUsername;
+    loadUserData(savedUserId);
+}
         updateDisplay(); selectDifficulty('easy');
         // ========== 单机结束 ==========
 
@@ -897,7 +916,116 @@ let onlineStats = { wins:0, losses:0, draws:0 };
         let sessionNickname = '';
         let myEmoteActive = false;
         let lastEmoteTimestamp = 0;
+// ===== 账号系统 =====
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
+async function registerAccount() {
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!username || !password) { alert('请输入用户名和密码'); return; }
+    if (password.length < 4) { alert('密码至少4位'); return; }
+    
+    const passwordHash = await hashPassword(password);
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+        method: 'POST',
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+            username: username,
+            password_hash: passwordHash
+        })
+    });
+    
+    if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('userId', data[0].id);
+        localStorage.setItem('username', username);
+        sessionNickname = username;
+        document.getElementById('nicknameInput').value = username;
+        document.getElementById('authStatus').textContent = `✅ 已登录：${username}`;
+        alert('注册成功！');
+        await loadUserData(data[0].id);
+    } else {
+        alert('用户名已存在');
+    }
+}
+
+async function loginAccount() {
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!username || !password) { alert('请输入用户名和密码'); return; }
+    
+    const passwordHash = await hashPassword(password);
+    
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/users?username=eq.${username}&password_hash=eq.${passwordHash}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await res.json();
+    
+    if (data.length > 0) {
+        localStorage.setItem('userId', data[0].id);
+        localStorage.setItem('username', username);
+        sessionNickname = username;
+        document.getElementById('nicknameInput').value = username;
+        document.getElementById('authStatus').textContent = `✅ 已登录：${username}`;
+        alert('登录成功！');
+        await loadUserData(data[0].id);
+    } else {
+        alert('用户名或密码错误');
+    }
+}
+
+function logoutAccount() {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    sessionNickname = '';
+    document.getElementById('authStatus').textContent = '未登录';
+    document.getElementById('nicknameInput').value = '';
+    alert('已退出登录');
+}
+
+async function saveUserData() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+            single_stats: stats,
+            learning_data: learningData,
+            online_stats: onlineStats
+        })
+    });
+}
+
+async function loadUserData(userId) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await res.json();
+    if (data.length > 0) {
+        stats = data[0].single_stats || stats;
+        learningData = data[0].learning_data || learningData;
+        onlineStats = data[0].online_stats || onlineStats;
+        updateDisplay();
+    }
+}
         function generateRoomCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 
         function requireNickname() {
@@ -1352,14 +1480,17 @@ const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
     msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
     onlineStats.draws++;
     onlineState.gameOver = true;
+                 saveUserData();
 } else if (me.hp === 0) {
     msg += `<br><span class="big-message">😢 遗憾落败......</span>`;
     onlineStats.losses++;
     onlineState.gameOver = true;
+                 saveUserData();
 } else if (opp.hp === 0) {
     msg += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
     onlineStats.wins++;
     onlineState.gameOver = true;
+                 saveUserData();
 }
 
             lastRoundMessage = msg;
