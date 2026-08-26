@@ -171,20 +171,19 @@
         .ultimate-btn {
     grid-column: span 2; display:flex; align-items:center; justify-content:center;
     width:100%; padding:12px; font-size:16px; font-weight:bold;
-    border: 1.5px solid transparent;
+    border: 1.5px solid rgba(0, 255, 255, 0.3);
     border-radius:12px;
-    background: 
-        linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15)) padding-box,
-        linear-gradient(135deg, rgba(0,255,255,0.4), rgba(255,0,255,0.4)) border-box;
+    background:linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15));
     color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
+    box-shadow:0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
     animation: borderBreath 3s ease-in-out infinite;
 }
         @keyframes borderBreath {
     0%, 100% { 
-        filter: brightness(0.8);
+        border-color: rgba(0, 255, 255, 0.3);
     }
     50% { 
-        filter: brightness(1.2);
+        border-color: rgba(255, 0, 255, 0.6);
     }
 }
         .ultimate-btn:disabled {
