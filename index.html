@@ -413,6 +413,11 @@
                     </button>
                 </div>
                 <button class="rematch-btn" id="rematchBtn" onclick="requestRematch()">🔄 再来一把</button>
+                <div class="stats">
+    <span>🏆 胜: <span id="onlineWins">0</span></span>
+    <span>😢 负: <span id="onlineLosses">0</span></span>
+    <span>🤝 平: <span id="onlineDraws">0</span></span>
+</div>
             </div>
         </div>
     </div>
@@ -811,7 +816,8 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         // ========== 单机结束 ==========
 
         // ========== 联机 ==========
-        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
+       let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
+let onlineStats = { wins:0, losses:0, draws:0 };
         let lastRoundMessage = '';
         let sessionNickname = '';
         let myEmoteActive = false;
@@ -881,6 +887,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             }
             onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, polling:null, myActionSubmitted:false, rematchRequested:false };
+            onlineStats = { wins:0, losses:0, draws:0 };
             lastRoundMessage = '';
             myEmoteActive = false;
             lastEmoteTimestamp = 0;
@@ -1267,15 +1274,18 @@ const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
             if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！`;
 
             if (me.hp === 0 && opp.hp === 0) {
-                msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
-                onlineState.gameOver = true;
-            } else if (me.hp === 0) {
-                msg += `<br><span class="big-message">😢 遗憾落败......</span>`;
-                onlineState.gameOver = true;
-            } else if (opp.hp === 0) {
-                msg += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
-                onlineState.gameOver = true;
-            }
+    msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
+    onlineStats.draws++;
+    onlineState.gameOver = true;
+} else if (me.hp === 0) {
+    msg += `<br><span class="big-message">😢 遗憾落败......</span>`;
+    onlineStats.losses++;
+    onlineState.gameOver = true;
+} else if (opp.hp === 0) {
+    msg += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
+    onlineStats.wins++;
+    onlineState.gameOver = true;
+}
 
             lastRoundMessage = msg;
             document.getElementById('onlineMessage').innerHTML = msg;
@@ -1292,6 +1302,9 @@ const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
             document.getElementById('onlineOpponentHp').textContent = '❤️'.repeat(onlineState.oppHp) + '🖤'.repeat(4 - onlineState.oppHp);
             document.getElementById('onlinePlayerEnergy').textContent = '⚡ 能量：' + onlineState.myEnergy;
             document.getElementById('onlineOpponentEnergy').textContent = '⚡ 能量：' + onlineState.oppEnergy;
+            document.getElementById('onlineWins').textContent = onlineStats.wins;
+document.getElementById('onlineLosses').textContent = onlineStats.losses;
+document.getElementById('onlineDraws').textContent = onlineStats.draws;
         }
         // ========== 联机结束 ==========
     </script>
