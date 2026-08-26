@@ -666,7 +666,8 @@ document.getElementById('draws').textContent = currentStats.draws;
             stateHistory: {},
             recentActions: [],
             counterSuccess: 0,
-            counterTotal: 0
+            counterTotal: 0,
+            lastCounterAction: null
         };
         function getOptimalCounter(playerAction, player, ai) {
             switch(playerAction) {
@@ -709,6 +710,13 @@ document.getElementById('draws').textContent = currentStats.draws;
                     return false;
             }
         }
+        function getCounterThreshold() {
+            if (learningData.counterTotal === 0) return 0.5;
+            const successRate = learningData.counterSuccess / learningData.counterTotal;
+            if (successRate > 0.6) return 0.35;
+            if (successRate < 0.3) return 0.65;
+            return 0.5;
+        }
         function predictNextAction() {
             const recent = learningData.recentActions;
             if (recent.length < 4) return null;
@@ -743,9 +751,13 @@ document.getElementById('draws').textContent = currentStats.draws;
         function aiDecideLearning() {
             const ai = gameState.ai, player = gameState.player;
             const optimalAction = getOptimalActionRounded();
+            const threshold = getCounterThreshold();
+            document.getElementById('aiStatus').textContent = '';
+            
             const key = `${player.hp}${ai.hp}${player.energy}${ai.energy}${player.lastUsedBreak?'是':'否'}${ai.lastUsedBreak?'是':'否'}${player.ultUsed?'是':'否'}${ai.ultUsed?'是':'否'}`;
             const stateHistory = learningData.stateHistory[key];
-            if (stateHistory && stateHistory.total >= 5) {
+            
+            if (stateHistory && stateHistory.total >= 3) {
                 let bestAction = null;
                 let bestCount = 0;
                 for (const [action, count] of Object.entries(stateHistory.actions)) {
@@ -755,20 +767,26 @@ document.getElementById('draws').textContent = currentStats.draws;
                     }
                 }
                 const patternStrength = bestCount / stateHistory.total;
-                if (patternStrength > 0.5) {
+                if (patternStrength > threshold) {
                     const counter = getOptimalCounter(bestAction, player, ai);
                     if (counter && isCounterBetter(counter, optimalAction, bestAction)) {
+                        learningData.lastCounterAction = counter;
+                        document.getElementById('aiStatus').textContent = '🧠 学习中...';
                         return counter;
                     }
                 }
             }
+            
             const predicted = predictNextAction();
-            if (predicted && predicted.confidence > 0.6) {
+            if (predicted && predicted.confidence > 0.5) {
                 const counter = getOptimalCounter(predicted.action, player, ai);
                 if (counter && isCounterBetter(counter, optimalAction, predicted.action)) {
+                    learningData.lastCounterAction = counter;
+                    document.getElementById('aiStatus').textContent = '🧠 学习中...';
                     return counter;
                 }
             }
+            
             return optimalAction;
         }
 
@@ -809,6 +827,15 @@ document.getElementById('draws').textContent = currentStats.draws;
             if (aa === '强绷' || aa === '绷带') gameState.ai.ultUsed = true;
             gameState.player.lastUsedBreak = (pa === '破绷');
             gameState.ai.lastUsedBreak = (aa === '破绷');
+
+            if (difficulty === 'learning' && learningData.lastCounterAction) {
+                learningData.counterTotal++;
+                const expectedCounter = getOptimalCounter(pa, gameState.player, gameState.ai);
+                if (expectedCounter && learningData.lastCounterAction === expectedCounter) {
+                    learningData.counterSuccess++;
+                }
+                learningData.lastCounterAction = null;
+            }
 
             let msg = `第${gameState.round}回合<br>你「<span class="action-highlight">${pa}</span>」 vs AI「<span class="action-highlight">${aa}</span>」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
             const actualHealToPlayer = Math.max(0, gameState.player.hp - (playerHpBefore - dmgToPlayer));
