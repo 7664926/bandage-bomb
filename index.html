@@ -428,12 +428,11 @@
                 <li>使用"绷绷炸弹"消耗2点能量</li>
                 <li>使用"完美绷住"消耗1点能量</li>
             </ul>
-            <h4>🌟 限定技（全局仅一次）</h4>
+            <h4>🌟 限定技（全局仅一次，二选一）</h4>
             <ul>
                 <li>💪 <b>强绷</b>：回复2点能量（被"轻松绷住"克制）</li>
                 <li>🩹 <b>绷带</b>：回复2点生命（被"破绷"克制）</li>
                 <li>被克制时：大招效果无效，但对方行动照常结算</li>
-                <li>伤害和回血同时结算后再计算最终血量</li>
             </ul>
             <h4>📋 行动列表</h4>
             <table class="action-table">
@@ -442,15 +441,15 @@
                 <tr><td>⚔️ 破绷</td><td>0</td><td>1</td><td>无</td></tr>
                 <tr><td>💣 绷绷炸弹</td><td>-2</td><td>3</td><td>无</td></tr>
                 <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷/强绷</td></tr>
-                <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切</td></tr>
+                <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切伤害</td></tr>
             </table>
             <h4>⚠️ 重要规则</h4>
             <ul>
                 <li>破绷不能连续两轮使用</li>
-                <li>伤害和回血同时计算，不会溢出</li>
+                <li>伤害和回血同时计算，不容易溢出</li>
                 <li>灰色按钮表示当前不可用</li>
             </ul>
-            <button class="close-rules-btn" onclick="toggleRules()">✅ 我知道了</button>
+            <button class="close-rules-btn" onclick="toggleRules()">我知道了</button>
         </div>
     </div>
     <script src="strategy.js"></script>
@@ -480,13 +479,19 @@
         // ========== 单机 ==========
         let gameState = { player:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, ai:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, round:1, gameOver:false, isProcessing:false };
         let difficulty = 'easy';
-        let stats = { wins:0, losses:0, draws:0 };
+        let stats = {
+    easy: { wins:0, losses:0, draws:0 },
+    normal: { wins:0, losses:0, draws:0 },
+    hard: { wins:0, losses:0, draws:0 },
+    learning: { wins:0, losses:0, draws:0 },
+    hell: { wins:0, losses:0, draws:0 }
+};
         let aiMemory = { playerPatterns:{}, lastPlayerActions:[] };
         const difficultyConfig = { easy:{name:'简单'}, normal:{name:'普通'}, hard:{name:'困难'}, learning:{name:'学习'}, hell:{name:'地狱'} };
 
         function selectDifficulty(diff) {
             if (diff === 'hell') {
-                const confirmHell = confirm('💀 地狱模式：AI使用精确最优策略，难度极高！\n确定要挑战吗？');
+                const confirmHell = confirm('💀 地狱模式：AI使用精确最优策略，难度较高！\n确定要挑战吗？');
                 if (!confirmHell) return;
             }
             difficulty = diff;
@@ -518,9 +523,10 @@
             document.getElementById('aiHp').textContent = '❤️'.repeat(gameState.ai.hp) + '🖤'.repeat(4 - gameState.ai.hp);
             document.getElementById('playerEnergy').textContent = '⚡ 能量：' + gameState.player.energy;
             document.getElementById('aiEnergy').textContent = '⚡ 能量：' + gameState.ai.energy;
-            document.getElementById('wins').textContent = stats.wins;
-            document.getElementById('losses').textContent = stats.losses;
-            document.getElementById('draws').textContent = stats.draws;
+            const currentStats = stats[difficulty] || { wins:0, losses:0, draws:0 };
+document.getElementById('wins').textContent = currentStats.wins;
+document.getElementById('losses').textContent = currentStats.losses;
+document.getElementById('draws').textContent = currentStats.draws;
             updateButtonStates();
         }
         function getValidAction(actor, action) {
@@ -787,9 +793,9 @@ if (actualHealToPlayer > 0 || actualHealToAI > 0) {
             if (!disabled) updateButtonStates();
         }
         function checkGameOver() {
-            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats.draws++; document.getElementById('message').innerHTML = '🤝 平局！'; endGame(); }
-            else if (gameState.player.hp === 0) { stats.losses++; document.getElementById('message').innerHTML = '😢 你输了！AI获胜！'; endGame(); }
-            else if (gameState.ai.hp === 0) { stats.wins++; document.getElementById('message').innerHTML = '🎉 恭喜！你赢了！'; endGame(); }
+            if (gameState.player.hp === 0 && gameState.ai.hp === 0) { stats[difficulty].draws++; document.getElementById('message').innerHTML = '🤝 平局。旗鼓相当的对手。'; endGame(); }
+else if (gameState.player.hp === 0) { stats[difficulty].losses++; document.getElementById('message').innerHTML = '😢 遗憾落败......'; endGame(); }
+else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementById('message').innerHTML = '🎉 恭喜！大获全胜！'; endGame(); }
             updateDisplay();
         }
         function endGame() { gameState.gameOver = true; disableAllButtons(true); document.getElementById('restartBtn').style.display = 'block'; }
@@ -1260,13 +1266,13 @@ const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
             if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！`;
 
             if (me.hp === 0 && opp.hp === 0) {
-                msg += `<br>🤝 平局！`;
+                msg += `<br>🤝 平局。旗鼓相当的对手。`;
                 onlineState.gameOver = true;
             } else if (me.hp === 0) {
-                msg += `<br>😢 你输了！`;
+                msg += `<br>😢 遗憾落败......`;
                 onlineState.gameOver = true;
             } else if (opp.hp === 0) {
-                msg += `<br>🎉 你赢了！`;
+                msg += `<br>🎉 恭喜！大获全胜！`;
                 onlineState.gameOver = true;
             }
 
