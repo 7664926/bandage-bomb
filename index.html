@@ -305,20 +305,37 @@
         .emote-option:active {
             transform: scale(0.95);
         }
+        .auth-btn {
+            padding:8px 16px;
+            border:1px solid rgba(0,255,255,0.3);
+            border-radius:16px;
+            background:rgba(255,255,255,0.05);
+            color:#e0e0e0;
+            cursor:pointer;
+            font-size:13px;
+            font-weight:bold;
+            transition:all 0.3s;
+        }
+        .auth-btn:hover {
+            background:rgba(0,255,255,0.15);
+            border-color:rgba(0,255,255,0.5);
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <div class="game-title">💣 绷绷炸弹 💣</div>
-        <div id="authPanel" style="margin-bottom:10px;">
-            <div style="text-align:center; font-size:13px; color:#e0e0e0; margin-bottom:5px;" id="authStatus">未登录</div>
-            <div id="authInputs">
+        <div id="authPanel" style="margin-bottom:10px; text-align:center;">
+            <button class="auth-btn" id="authDisplayBtn" onclick="toggleAuthMenu()">
+                <span id="authStatus">未登录</span>
+            </button>
+            <div id="authInputs" style="display:none; margin-top:8px;">
                 <input class="room-input" id="authUsername" placeholder="用户名" maxlength="20" style="margin:3px 0;">
                 <input class="room-input" id="authPassword" placeholder="密码" type="password" maxlength="30" style="margin:3px 0;">
-                <div style="display:flex; gap:6px; margin:5px 0;">
-                    <button class="room-btn create" onclick="registerAccount()" style="font-size:12px; padding:8px; flex:1;">注册</button>
-                    <button class="room-btn join" onclick="loginAccount()" style="font-size:12px; padding:8px; flex:1;">登录</button>
-                    <button class="room-btn" onclick="logoutAccount()" style="font-size:12px; padding:8px; flex:1; background:rgba(255,255,255,0.1); color:#e0e0e0; border:1px solid rgba(255,255,255,0.3);">退出</button>
+                <div style="display:flex; gap:6px; margin:5px 0; justify-content:center;">
+                    <button class="auth-btn" id="btnRegister" onclick="registerAccount()">注册</button>
+                    <button class="auth-btn" id="btnLogin" onclick="loginAccount()">登录</button>
+                    <button class="auth-btn" id="btnLogout" onclick="logoutAccount()" style="border-color:rgba(255,68,68,0.4); color:#ff6b6b;">退出</button>
                 </div>
             </div>
         </div>
@@ -889,6 +906,37 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         }
 
         // ===== 账号系统 =====
+        function toggleAuthMenu() {
+            const authInputs = document.getElementById('authInputs');
+            if (authInputs.style.display === 'none') {
+                authInputs.style.display = 'block';
+            } else {
+                authInputs.style.display = 'none';
+            }
+        }
+
+        function updateAuthUI(isLoggedIn) {
+            const btnRegister = document.getElementById('btnRegister');
+            const btnLogin = document.getElementById('btnLogin');
+            const btnLogout = document.getElementById('btnLogout');
+            
+            if (isLoggedIn) {
+                btnRegister.disabled = true;
+                btnLogin.disabled = true;
+                btnRegister.style.opacity = '0.4';
+                btnLogin.style.opacity = '0.4';
+                btnLogout.disabled = false;
+                btnLogout.style.opacity = '1';
+            } else {
+                btnRegister.disabled = false;
+                btnLogin.disabled = false;
+                btnRegister.style.opacity = '1';
+                btnLogin.style.opacity = '1';
+                btnLogout.disabled = true;
+                btnLogout.style.opacity = '0.4';
+            }
+        }
+
         async function hashPassword(password) {
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
@@ -926,6 +974,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 document.getElementById('nicknameInput').value = username;
                 document.getElementById('authStatus').textContent = `✅ 已登录：${username}`;
                 document.getElementById('authInputs').style.display = 'none';
+                updateAuthUI(true);
                 alert('注册成功！');
                 await loadUserData(data[0].id);
             } else {
@@ -952,6 +1001,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 document.getElementById('nicknameInput').value = username;
                 document.getElementById('authStatus').textContent = `✅ 已登录：${username}`;
                 document.getElementById('authInputs').style.display = 'none';
+                updateAuthUI(true);
                 alert('登录成功！');
                 await loadUserData(data[0].id);
             } else {
@@ -964,8 +1014,9 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             localStorage.removeItem('username');
             sessionNickname = '';
             document.getElementById('authStatus').textContent = '未登录';
-            document.getElementById('authInputs').style.display = 'block';
+            document.getElementById('authInputs').style.display = 'none';
             document.getElementById('nicknameInput').value = '';
+            updateAuthUI(false);
             alert('已退出登录');
         }
 
@@ -1505,10 +1556,12 @@ document.getElementById('onlineDraws').textContent = onlineStats.draws;
         const savedUsername = localStorage.getItem('username');
         if (savedUserId && savedUsername) {
             document.getElementById('authStatus').textContent = `✅ 已登录：${savedUsername}`;
-            document.getElementById('authInputs').style.display = 'none';
             document.getElementById('nicknameInput').value = savedUsername;
             sessionNickname = savedUsername;
+            updateAuthUI(true);
             loadUserData(savedUserId);
+        } else {
+            updateAuthUI(false);
         }
         // ========== 联机结束 ==========
     </script>
