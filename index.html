@@ -137,12 +137,23 @@
             transition:all 0.3s; touch-action:manipulation;
             box-shadow:0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),0 0 10px rgba(0,255,255,0.05);
         }
-        .actions button:hover:not(:disabled) {
-    transform: scale(1.03) translateY(-2px);  /* 增加上移 */
-    background: linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
-    border-color: rgba(0,255,255,0.7);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 35px rgba(0,255,255,0.25);
-    transition: all 0.2s ease;  /* 更快的响应 */
+        /* 电脑端（有hover能力） */
+@media (hover: hover) and (pointer: fine) {
+    .actions button:hover:not(:disabled) {
+        transform: scale(1.03) translateY(-2px);
+        background: linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
+        border-color: rgba(0,255,255,0.7);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 35px rgba(0,255,255,0.25);
+    }
+}
+
+/* 手机端（触摸屏） */
+@media (hover: none), (pointer: coarse) {
+    .actions button:active:not(:disabled) {
+        transform: scale(0.97);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 15px rgba(0,255,255,0.1);
+        transition: all 0.05s ease;
+    }
 }
         .actions button:active:not(:disabled) {
     transform: scale(0.97);  /* 按下缩小 */
