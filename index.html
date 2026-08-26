@@ -170,38 +170,30 @@
         #btn-完美绷住, #onlineBtn-完美绷住 { grid-column: span 2; }
         .ultimate-btn {
             grid-column: span 2; display:flex; align-items:center; justify-content:center;
-            width:100%; padding:12px; font-size:16px; font-weight:bold; border:1.5px solid rgba(255,0,255,0.4);
+            width:100%; padding:12px; font-size:16px; font-weight:bold; border:1.5px solid rgba(255,0,255,0.5);
             border-radius:12px;
             background:linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15));
             color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
             box-shadow:0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
     0 0 25px rgba(255,0,255,0.5), 0 0 50px rgba(255,0,255,0.25);
-            position: relative;
-    overflow: hidden;
+            animation: borderBreath 3s ease-in-out infinite;
         }
-        .ultimate-btn::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, 
-        #ff00ff, #00ffff, #ff00ff, #ff6b6b, #ff00ff);
-    background-size: 400% 400%;
-    border-radius: 13px;
-    z-index: -1;
-    animation: borderGlow 3s ease infinite;
+        @keyframes borderBreath {
+    0%, 100% { 
+        border-color: rgba(255,0,255,0.4);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
+                    0 0 10px rgba(255,0,255,0.2);
+    }
+    50% { 
+        border-color: rgba(255,0,255,0.7);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
+                    0 0 20px rgba(255,0,255,0.35);
+    }
+        }
+        .ultimate-btn:disabled {
+    animation: none;
 }
 
-@keyframes borderGlow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-        .ultimate-btn:disabled::before {
-    display: none;
-}
         .ultimate-btn:disabled { background:rgba(40,40,60,0.5); color:#555; opacity:0.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); }
         .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .ultimate-btn .ultimate-divider { font-size:20px; font-weight:900; color:#00ffff; padding:0 6px; text-shadow:0 0 10px rgba(0,255,255,0.5); }
