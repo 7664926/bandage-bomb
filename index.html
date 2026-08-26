@@ -458,6 +458,21 @@
             <button class="close-rules-btn" onclick="toggleRules()">我知道了</button>
         </div>
     </div>
+
+    <div class="rules-modal" id="hellModal">
+        <div class="rules-content" style="max-width:350px;">
+            <h3>💀 地狱模式</h3>
+            <p style="text-align:center; font-size:14px; margin:10px 0;">
+                AI使用精确最优策略，难度极高！<br>
+                确定要挑战吗？
+            </p>
+            <div style="display:flex; gap:10px;">
+                <button class="close-rules-btn" style="background:rgba(255,68,68,0.3); border-color:rgba(255,68,68,0.4);" onclick="cancelHellMode()">取消</button>
+                <button class="close-rules-btn" onclick="confirmHellMode()">确定挑战</button>
+            </div>
+        </div>
+    </div>
+
     <script src="strategy.js"></script>
     <script>
         const SUPABASE_URL = 'https://xtblgsmyvewsytfhtzcy.supabase.co';
@@ -495,11 +510,31 @@
         let aiMemory = { playerPatterns:{}, lastPlayerActions:[] };
         const difficultyConfig = { easy:{name:'简单'}, normal:{name:'普通'}, hard:{name:'困难'}, learning:{name:'学习'}, hell:{name:'地狱'} };
 
+        let pendingHellMode = false;
+
         function selectDifficulty(diff) {
             if (diff === 'hell') {
-                const confirmHell = confirm('💀 地狱模式：AI使用精确最优策略，难度较高！\n确定要挑战吗？');
-                if (!confirmHell) return;
+                pendingHellMode = true;
+                document.getElementById('hellModal').classList.add('show');
+                return;
             }
+            applyDifficulty(diff);
+        }
+
+        function confirmHellMode() {
+            document.getElementById('hellModal').classList.remove('show');
+            if (pendingHellMode) {
+                pendingHellMode = false;
+                applyDifficulty('hell');
+            }
+        }
+
+        function cancelHellMode() {
+            document.getElementById('hellModal').classList.remove('show');
+            pendingHellMode = false;
+        }
+
+        function applyDifficulty(diff) {
             difficulty = diff;
             document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`[data-difficulty="${diff}"]`).classList.add('active');
@@ -510,6 +545,7 @@
             updateDisplay();
             disableAllButtons(false);
         }
+
         function resetLearning() { aiMemory = { playerPatterns:{}, lastPlayerActions:[] }; }
         function updateButtonStates() {
             const p = gameState.player;
