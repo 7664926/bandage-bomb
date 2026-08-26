@@ -33,12 +33,12 @@
             pointer-events:none;
         }
         .game-container {
-            background:rgba(20,20,40,0.6);
-            backdrop-filter:blur(20px) saturate(180%);
+            background:rgba(20,20,40,0.75);
+            backdrop-filter:blur(30px) saturate(200%);
             -webkit-backdrop-filter:blur(20px) saturate(180%);
-            border:1px solid rgba(255,255,255,0.15);
+            border:1.5px solid rgba(255,255,255,0.2);
             border-radius:24px; padding:15px; width:100%; max-width:460px;
-            box-shadow:0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 60px rgba(0,255,255,0.06);
+            box-shadow:0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 80px rgba(0,255,255,0.08);
             max-height:95vh; overflow-y:auto;
             position:relative; z-index:1;
         }
@@ -52,7 +52,9 @@
         .game-title {
             text-align:center; font-size:22px; font-weight:bold; color:#ffffff;
             margin-bottom:8px; letter-spacing:2px;
-            text-shadow:0 0 20px rgba(0,255,255,0.5), 0 0 40px rgba(255,0,255,0.25);
+            text-shadow: 0 0 20px rgba(0,255,255,0.6),
+                 0 0 40px rgba(255,0,255,0.4),
+                 0 0 60px rgba(0,255,255,0.2);
         }
         .mode-selector { display:flex; justify-content:center; gap:8px; margin-bottom:10px; }
         .mode-btn {
@@ -60,6 +62,12 @@
             background:rgba(255,255,255,0.05); color:#e0e0e0; cursor:pointer; font-size:13px; font-weight:bold;
             transition:all 0.3s;
         }
+        .mode-btn:hover {
+    background: rgba(0,255,255,0.15);
+    border-color: rgba(0,255,255,0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,255,255,0.15);
+}
         .mode-btn.active {
             background:linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
             border-color:rgba(0,255,255,0.5); color:#ffffff;
@@ -71,7 +79,7 @@
             background:rgba(255,255,255,0.05); color:#e0e0e0; cursor:pointer; font-size:12px;
             transition:all 0.3s; font-weight:bold;
         }
-        .difficulty-btn:hover { transform:translateY(-1px); }
+        .difficulty-btn:hover { transform:translateY(-2px);box-shadow: 0 6px 15px rgba(0,255,255,0.2);  /* 添加阴影 */ }
         .difficulty-btn.active {
             background:linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
             border-color:rgba(0,255,255,0.5); color:#ffffff;
@@ -102,48 +110,56 @@
         .rules-content .action-table th { background:rgba(0,255,255,0.1); color:#00ffff; }
         .close-rules-btn { width:100%; padding:10px; margin-top:15px; background:linear-gradient(135deg, rgba(0,255,255,0.3), rgba(255,0,255,0.3)); color:#ffffff; border:1px solid rgba(0,255,255,0.4); border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; }
         .rules-toggle-btn { display:block; margin:0 auto 8px; padding:5px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,255,0.3); color:#00ffff; border-radius:15px; cursor:pointer; font-size:12px; }
-        .player-info { text-align:center; padding:6px; border-radius:10px; margin:4px 0; position:relative; }
+        .player-info { text-align:center; padding:8px; border-radius:10px; margin:4px 0; position:relative; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 
+                0 2px 8px rgba(0,0,0,0.2);  /* 添加内阴影 */}
         .player-info.opponent { background:rgba(255,0,0,0.08); border:1.5px solid rgba(255,107,107,0.5); }
         .player-info.you { background:rgba(0,255,0,0.06); border:1.5px solid rgba(107,255,107,0.4); }
         .player-name { font-size:13px; font-weight:bold; margin-bottom:2px; color:#e0e0e0; }
         .opponent .player-name { color:#ff6b6b; text-shadow:0 0 10px rgba(255,107,107,0.5); }
         .you .player-name { color:#6bffb8; text-shadow:0 0 10px rgba(107,255,184,0.5); }
         .hp { font-size:18px; margin:2px 0; letter-spacing:1px; }
-        .energy { font-size:13px; color:#00ffff; margin:2px 0; text-shadow:0 0 8px rgba(0,255,255,0.5); }
+        .energy { font-size:13px; color:#00ffff; margin:2px 0;  text-shadow: 0 0 8px rgba(0,255,255,0.6), 0 0 20px rgba(0,255,255,0.3);  }
         .ai-status { font-size:10px; color:#ffa500; margin-top:1px; font-style:italic; }
         .battle-info {
-            text-align:center; padding:16px 12px; background:rgba(255,255,255,0.03);
+            text-align:center; padding:16px 12px; background:rgba(255,255,255,0.05);
             border-radius:14px; margin:10px 0; min-height:105px; display:flex;
             flex-direction:column; justify-content:center; align-items:center;
-            border:1px solid rgba(0,255,255,0.2);
-            box-shadow:inset 0 0 20px rgba(0,255,255,0.04), 0 4px 15px rgba(0,0,0,0.2);
+            border:1.5px solid rgba(0,255,255,0.25);
+            box-shadow:inset 0 0 20px rgba(0,255,255,0.04), 0 4px 20px rgba(0,0,0,0.3);
         }
         #message, #onlineMessage { font-size:15px; color:#ffffff; line-height:1.65; white-space:pre-line; font-weight:bold; text-shadow:0 0 10px rgba(0,255,255,0.3); }
         .action-highlight { font-size:17px; font-weight:900; color:#00ffff; text-shadow:0 0 15px rgba(0,255,255,0.6); }
         .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
         .actions button {
-            padding:12px; font-size:16px; font-weight:bold; border:1px solid rgba(0,255,255,0.25); border-radius:12px;
+            padding:12px; font-size:16px; font-weight:bold; border:1.5px solid rgba(0,255,255,0.3); border-radius:12px;
             background:linear-gradient(135deg, rgba(0,255,255,0.12), rgba(255,0,255,0.12));
             color:#ffffff; cursor:pointer;
             transition:all 0.3s; touch-action:manipulation;
-            box-shadow:0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+            box-shadow:0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),0 0 10px rgba(0,255,255,0.05);
         }
         .actions button:hover:not(:disabled) {
-            transform:scale(1.03);
-            background:linear-gradient(135deg, rgba(0,255,255,0.22), rgba(255,0,255,0.22));
-            border-color:rgba(0,255,255,0.5);
-            box-shadow:0 8px 25px rgba(0,0,0,0.3), 0 0 25px rgba(0,255,255,0.15);
-        }
+    transform: scale(1.03) translateY(-2px);  /* 增加上移 */
+    background: linear-gradient(135deg, rgba(0,255,255,0.25), rgba(255,0,255,0.25));
+    border-color: rgba(0,255,255,0.7);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 35px rgba(0,255,255,0.25);
+    transition: all 0.2s ease;  /* 更快的响应 */
+}
+        .actions button:active:not(:disabled) {
+    transform: scale(0.97);  /* 按下缩小 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 15px rgba(0,255,255,0.1);
+    transition: all 0.05s ease;
+}
         .actions button:disabled { background:rgba(40,40,60,0.5); color:#555; opacity:0.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); }
         .actions button small { font-size:10px; opacity:0.8; display:block; margin-top:2px; }
         #btn-完美绷住, #onlineBtn-完美绷住 { grid-column: span 2; }
         .ultimate-btn {
             grid-column: span 2; display:flex; align-items:center; justify-content:center;
-            width:100%; padding:12px; font-size:16px; font-weight:bold; border:1px solid rgba(255,0,255,0.3);
+            width:100%; padding:12px; font-size:16px; font-weight:bold; border:1.5px solid rgba(255,0,255,0.4);
             border-radius:12px;
             background:linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15));
             color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
-            box-shadow:0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+            box-shadow:0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
+                0 0 15px rgba(255,0,255,0.1);
         }
         .ultimate-btn:disabled { background:rgba(40,40,60,0.5); color:#555; opacity:0.35; cursor:not-allowed; border-color:rgba(255,255,255,0.08); }
         .ultimate-btn .ultimate-half { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -264,7 +280,7 @@
 </head>
 <body>
     <div class="game-container">
-        <div class="game-title">⚡ 绷绷炸弹 ⚡</div>
+        <div class="game-title">💣 绷绷炸弹 💣</div>
         <div class="mode-selector">
             <button class="mode-btn active" id="modeSingleBtn" onclick="switchMode('single')">🤖 单机</button>
             <button class="mode-btn" id="modeOnlineBtn" onclick="switchMode('online')">🌐 联机</button>
@@ -447,7 +463,6 @@
     document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-difficulty="${diff}"]`).classList.add('active');
     document.getElementById('aiStatus').textContent = `难度：${difficultyConfig[diff].name}`;
-    if (diff === 'learning') resetLearning();
     
     // 重置游戏状态
     gameState = { player:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, ai:{hp:4,energy:0,lastUsedBreak:false,ultUsed:false}, round:1, gameOver:false, isProcessing:false };
@@ -550,48 +565,133 @@
         function aiDecideHard() {
     return getOptimalAction();
 }
-        function aiDecideLearning() {
+
+// 学习模式状态
+let learningData = {
+    // 记录玩家在每个状态下的行动历史
+    stateHistory: {},
+    // 记录玩家近N次行动序列
+    recentActions: [],
+    // 记录反制成功率
+    counterSuccess: 0,
+    counterTotal: 0
+};
+
+function aiDecideLearning() {
     const ai = gameState.ai, player = gameState.player;
     
-    // 先分析玩家模式
-    const pattern = analyzePattern();
+    // 默认先获取最优策略
+    const optimalAction = getOptimalAction();
     
-    // 如果发现玩家有明显规律（置信度>40%），用针对性反制
-    if (pattern && pattern.confidence > 0.4) {
-        const counter = getCounterAction(pattern.action, player, ai);
-        if (counter) return counter;
+    // 1. 获取当前状态的玩家历史
+    const key = `${player.hp}${ai.hp}${player.energy}${ai.energy}${player.lastUsedBreak?'是':'否'}${ai.lastUsedBreak?'是':'否'}${player.ultUsed?'是':'否'}${ai.ultUsed?'是':'否'}`;
+    const stateHistory = learningData.stateHistory[key];
+    
+    // 2. 如果历史数据足够（>=5次），分析玩家规律
+    if (stateHistory && stateHistory.total >= 5) {
+        // 找出玩家最常用的行动
+        let bestAction = null;
+        let bestCount = 0;
+        for (const [action, count] of Object.entries(stateHistory.actions)) {
+            if (count > bestCount) {
+                bestCount = count;
+                bestAction = action;
+            }
+        }
+        
+        // 计算规律强度
+        const patternStrength = bestCount / stateHistory.total;
+        
+        // 只有规律强度>50%才考虑反制
+        if (patternStrength > 0.5) {
+            const counter = getOptimalCounter(bestAction, player, ai);
+            
+            // 计算反制是否真的比最优策略好
+            if (counter && isCounterBetter(counter, optimalAction, bestAction)) {
+                return counter;
+            }
+        }
     }
     
-    // 否则使用最优策略查表
-    return getOptimalAction();
+    // 3. 最近行动序列分析（预测下一步）
+    const predicted = predictNextAction();
+    if (predicted && predicted.confidence > 0.6) {
+        const counter = getOptimalCounter(predicted.action, player, ai);
+        if (counter && isCounterBetter(counter, optimalAction, predicted.action)) {
+            return counter;
+        }
+    }
+    
+    // 4. 默认使用最优策略
+    return optimalAction;
 }
 
-// 针对性反制逻辑
-function getCounterAction(playerAction, player, ai) {
-    switch(playerAction) {
+// 计算反制是否比最优策略更好
+function isCounterBetter(counterAction, optimalAction, predictedPlayerAction) {
+    // 如果反制和最优策略一致，当然用
+    if (counterAction === optimalAction) return true;
+    
+    // 简化判断：如果反制能直接克制玩家的预测行动，就用
+    switch(predictedPlayerAction) {
         case '绷绷炸弹':
-            if (ai.energy >= 1) return '完美绷住';
-            break;
+            return counterAction === '完美绷住' && gameState.ai.energy >= 1;
         case '破绷':
-            if (!player.lastUsedBreak) return '轻松绷住';
-            break;
+            return counterAction === '轻松绷住';
         case '强绷':
-            return '轻松绷住';
-            break;
+            return counterAction === '轻松绷住';
         case '绷带':
-            if (!ai.lastUsedBreak) return '破绷';
-            break;
-        case '绷住':
-            if (!ai.lastUsedBreak) return '破绷';
-            break;
-        case '轻松绷住':
-            if (ai.energy >= 2) return '绷绷炸弹';
-            break;
-        case '完美绷住':
-            if (ai.energy < 2) return '绷住';
-            break;
+            return counterAction === '破绷' && !gameState.ai.lastUsedBreak;
+        default:
+            return false;
     }
-    return null; // 不反制，走查表
+}
+
+// 序列预测
+function predictNextAction() {
+    const recent = learningData.recentActions;
+    if (recent.length < 4) return null;
+    
+    // 取最近3个行动作为模式
+    const pattern = recent.slice(-3).join(',');
+    const nextActions = {};
+    
+    // 在历史中查找这个模式后面跟的行动
+    for (let i = 0; i < recent.length - 3; i++) {
+        if (recent[i] + ',' + recent[i+1] + ',' + recent[i+2] === pattern) {
+            const next = recent[i+3];
+            nextActions[next] = (nextActions[next] || 0) + 1;
+        }
+    }
+    
+    // 如果找到匹配
+    const entries = Object.entries(nextActions);
+    if (entries.length === 0) return null;
+    
+    entries.sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, e) => sum + e[1], 0);
+    const best = entries[0];
+    
+    return {
+        action: best[0],
+        confidence: best[1] / total
+    };
+}
+
+// 记录玩家行动
+function recordPlayerActionLearning(action) {
+    const p = gameState.player, a = gameState.ai;
+    const key = `${p.hp}${a.hp}${p.energy}${a.energy}${p.lastUsedBreak?'是':'否'}${a.lastUsedBreak?'是':'否'}${p.ultUsed?'是':'否'}${a.ultUsed?'是':'否'}`;
+    
+    if (!learningData.stateHistory[key]) {
+        learningData.stateHistory[key] = { total: 0, actions: {} };
+    }
+    learningData.stateHistory[key].total++;
+    learningData.stateHistory[key].actions[action] = (learningData.stateHistory[key].actions[action] || 0) + 1;
+    
+    learningData.recentActions.push(action);
+    if (learningData.recentActions.length > 50) {
+        learningData.recentActions.shift();
+    }
 }
 
         function playerAction(action) {
