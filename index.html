@@ -169,27 +169,24 @@
         .actions button small { font-size:10px; opacity:0.8; display:block; margin-top:2px; }
         #btn-完美绷住, #onlineBtn-完美绷住 { grid-column: span 2; }
         .ultimate-btn {
-            grid-column: span 2; display:flex; align-items:center; justify-content:center;
-            width:100%; padding:12px; font-size:16px; font-weight:bold; border:1.5px solid rgba(255,0,255,0.5);
-            border-radius:12px;
-            background:linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15));
-            color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
-            box-shadow:0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
-    0 0 25px rgba(255,0,255,0.5), 0 0 50px rgba(255,0,255,0.25);
-            animation: borderBreath 3s ease-in-out infinite;
-        }
+    grid-column: span 2; display:flex; align-items:center; justify-content:center;
+    width:100%; padding:12px; font-size:16px; font-weight:bold;
+    border: 1.5px solid transparent;
+    border-radius:12px;
+    background: 
+        linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,107,107,0.15)) padding-box,
+        linear-gradient(135deg, rgba(0,255,255,0.4), rgba(255,0,255,0.4)) border-box;
+    color:#ffffff; cursor:pointer; transition:all 0.3s; touch-action:manipulation;
+    animation: borderBreath 3s ease-in-out infinite;
+}
         @keyframes borderBreath {
     0%, 100% { 
-        border-color: rgba(255,0,255,0.4);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
-                    0 0 10px rgba(255,0,255,0.2);
+        filter: brightness(0.8);
     }
     50% { 
-        border-color: rgba(255,0,255,0.7);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15),
-                    0 0 20px rgba(255,0,255,0.35);
+        filter: brightness(1.2);
     }
-        }
+}
         .ultimate-btn:disabled {
     animation: none;
 }
