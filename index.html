@@ -1078,7 +1078,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         // ========== 单机结束 ==========
 
                // ========== 联机 ==========
-        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false };
+        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false , resolvedRound: 0};
         let onlineStats = { wins:0, losses:0, draws:0 };
         let lastRoundMessage = '';
         let sessionNickname = '';
@@ -1383,6 +1383,8 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         }
 
         async function resolveOnlineRound(p1A, p2A, roundNum) {
+             if (onlineState.resolvedRound === roundNum) return;
+    onlineState.resolvedRound = roundNum;
             const me = {
                 hp: onlineState.myHp,
                 energy: onlineState.myEnergy,
