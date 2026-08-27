@@ -887,7 +887,7 @@ document.getElementById('draws').textContent = currentStats.draws;
             }
 const paClass = (pa === '强绷' || pa === '绷带') ? 'ult-highlight' : 'action-highlight';
 const aaClass = (aa === '强绷' || aa === '绷带') ? 'ult-highlight' : 'action-highlight';
-            let msg = `第${gameState.round}回合<br>你「<span class="action-highlight">${pa}</span>」 vs AI「<span class="action-highlight">${aa}</span>」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
+           let msg = `第${gameState.round}回合<br>你「<span class="${paClass}">${pa}</span>」 vs AI「<span class="${aaClass}">${aa}</span>」<br>你受到${dmgToPlayer}伤害，AI受到${dmgToAI}伤害`;
             const actualHealToPlayer = Math.max(0, gameState.player.hp - (playerHpBefore - dmgToPlayer));
 const actualHealToAI = Math.max(0, gameState.ai.hp - (aiHpBefore - dmgToAI));
 if (actualHealToPlayer > 0 || actualHealToAI > 0) {
@@ -1494,7 +1494,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
 const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
 const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
-            let msg = `上回合：你「<span class="action-highlight">${myAction}</span>」 vs 对手「<span class="action-highlight">${oppAction}</span>」<br>`;
+            let msg = `上回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
             msg += `你受到${myDmg}伤害，对手受到${oppDmg}伤害`;
 
             if (myHeal > 0 || oppHeal > 0) {
