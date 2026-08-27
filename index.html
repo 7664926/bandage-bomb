@@ -1233,20 +1233,22 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         }
 
         async function checkAndResolveRound(roundNum) {
-            const res = await fetch(
-                `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`,
-                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-            );
-            const actions = await res.json();
-            
-            if (actions.length >= 2 && !onlineState.gameOver) {
-                const p1A = actions.find(a => a.player === 'player1');
-                const p2A = actions.find(a => a.player === 'player2');
-                if (p1A && p2A) {
-                    await resolveOnlineRound(p1A.action, p2A.action, roundNum);
-                }
-            }
+    // 查询当前回合的所有行动
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    const actions = await res.json();
+    
+    if (actions.length >= 2 && !onlineState.gameOver) {
+        const p1A = actions.find(a => a.player === 'player1');
+        const p2A = actions.find(a => a.player === 'player2');
+        if (p1A && p2A) {
+            // 双方都结算，不删除行动数据，只更新房间状态
+            await resolveOnlineRound(p1A.action, p2A.action, roundNum);
         }
+    }
+}
 
         function resetOnlineGame() {
             onlineState.myHp = 4;
@@ -1459,11 +1461,6 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             const player2Ult = onlineState.myPlayer === 'player1' ? opp.ultUsed : me.ultUsed;
             const player1Break = onlineState.myPlayer === 'player1' ? (myAction === '破绷') : (oppAction === '破绷');
             const player2Break = onlineState.myPlayer === 'player1' ? (oppAction === '破绷') : (myAction === '破绷');
-
-            await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
-                method: 'DELETE',
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
 
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
                 method: 'PATCH',
