@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>绷绷炸弹</title>
+    <title>小游戏：绷绷炸弹</title>
 
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -1145,7 +1145,7 @@ let onlineStats = { wins:0, losses:0, draws:0 };
 
         function startPolling() {
             if (onlineState.polling) clearInterval(onlineState.polling);
-            onlineState.polling = setInterval(pollRoom, 1000);
+            onlineState.polling = setInterval(pollRoom, 500);
         }
 
         function updateOnlineButtonStates() {
