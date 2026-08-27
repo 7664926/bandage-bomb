@@ -49,7 +49,7 @@
             position:relative; z-index:1;
         }
         .ult-highlight {
-    font-size:20px;
+    font-size:19px;
     font-weight:900;
     color:#ff8800;
     text-shadow:0 0 15px rgba(255,136,0,0.8);
@@ -895,8 +895,8 @@ if (actualHealToPlayer > 0 || actualHealToAI > 0) {
     else if (actualHealToPlayer > 0) msg += `<br>你回复了${actualHealToPlayer}血`;
     else msg += `<br>AI回复了${actualHealToAI}血`;
 }
-            if (ultBlockedP) msg += `<br>💥 你的大招被克制！`;
-            if (ultBlockedAI) msg += `<br>💥 AI的大招被克制！`;
+            if (ultBlockedP) msg += `<br>💥 你的大招被克制！💥`;
+            if (ultBlockedAI) msg += `<br>💥 AI的大招被克制！💥`;
             document.getElementById('message').innerHTML = msg;
             updateDisplay();
             gameState.round++;
@@ -1507,8 +1507,8 @@ const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highl
                 }
             }
 
-            if (myUltBlocked) msg += `<br>💥 你的大招被克制！`;
-            if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！`;
+            if (myUltBlocked) msg += `<br>💥 你的大招被克制！💥`;
+            if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！💥`;
 
             if (me.hp === 0 && opp.hp === 0) {
                 msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
