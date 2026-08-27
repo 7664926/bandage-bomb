@@ -1116,6 +1116,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 document.getElementById('onlineGame').style.display = 'block';
                 document.getElementById('onlinePlayerName').textContent = nickname;
                 document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<span class="big-message">${code}</span><br>等待对手加入...`;
+                updateOnlineDisplay();
                 startRealtime();
             } else { alert('创建房间失败'); }
         }
@@ -1141,6 +1142,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             document.getElementById('onlineGame').style.display = 'block';
             document.getElementById('onlinePlayerName').textContent = nickname;
             document.getElementById('onlineMessage').innerHTML = '<span class="big-message">🎮 游戏开始！</span>选择你的行动';
+            updateOnlineDisplay();
             startRealtime();
         }
 
