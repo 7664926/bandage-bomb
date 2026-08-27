@@ -1350,7 +1350,10 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
 
                 sendStats(action, 'online');
                 document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
-            } catch (e) {
+            } 
+                            setTimeout(() => {
+                    checkAndResolveRound(onlineState.round);
+                }, 300);catch (e) {
                 onlineState.myActionSubmitted = false;
                 updateOnlineButtonStates();
                 alert('网络错误，请重试');
