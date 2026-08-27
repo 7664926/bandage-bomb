@@ -369,16 +369,16 @@
                 <div class="hp" id="playerHp">❤️❤️❤️❤️</div>
                 <div class="energy" id="playerEnergy">⚡ 能量：0</div>
             </div>
-            <div class="actions" id="actions">
-                <button id="btn-绷住" onclick="playerAction('绷住')">🔋 绷住<small>能量+1</small></button>
-                <button id="btn-破绷" onclick="playerAction('破绷')">⚔️ 破绷<small>1伤害</small></button>
+             <div class="actions" id="actions">
+                <button id="btn-绷住" onclick="playerAction('绷住')">🔋 绷住<small>+1⚡</small></button>
+                <button id="btn-破绷" onclick="playerAction('破绷')">⚔️ 破绷<small>1伤害/破绷带</small></button>
                 <button id="btn-绷绷炸弹" onclick="playerAction('绷绷炸弹')">💣 绷绷炸弹<small>3伤害 -2⚡</small></button>
-                <button id="btn-轻松绷住" onclick="playerAction('轻松绷住')">🛡️ 轻松绷住<small>挡破绷/强绷</small></button>
+                <button id="btn-轻松绷住" onclick="playerAction('轻松绷住')">🛡️ 轻松绷住<small>挡破绷/破强绷</small></button>
                 <button id="btn-完美绷住" onclick="playerAction('完美绷住')">✨ 完美绷住<small>挡一切 -1⚡</small></button>
                 <button class="ultimate-btn" id="btn-ultimate" disabled>
-                    <span class="ultimate-half" onclick="playerAction('强绷')">💪 强绷<small>回2⚡</small></span>
+                    <span class="ultimate-half" onclick="playerAction('强绷')">💪 强绷<small>+2⚡</small></span>
                     <span class="ultimate-divider">/</span>
-                    <span class="ultimate-half" onclick="playerAction('绷带')">🩹 绷带<small>回2❤️</small></span>
+                    <span class="ultimate-half" onclick="playerAction('绷带')">🩹 绷带<small>+2❤️</small></span>
                 </button>
             </div>
             <button class="restart-btn" id="restartBtn" onclick="restartGame()">🔄 重新开始</button>
@@ -451,23 +451,15 @@
         </div>
     </div>
 
-    <div class="rules-modal" id="rulesModal">
+     <div class="rules-modal" id="rulesModal">
         <div class="rules-content">
             <h3>绷绷炸弹游戏规则</h3>
             <h4>🎯 游戏目标</h4>
             <p>将对方生命值降至0或以下即可获胜！双方初始各有4点❤️</p>
             <h4>⚡ 能量系统</h4>
             <ul>
-                <li>初始能量为0，上限3</li>
-                <li>使用"绷住"可获得1点能量</li>
-                <li>使用"绷绷炸弹"消耗2点能量</li>
-                <li>使用"完美绷住"消耗1点能量</li>
-            </ul>
-            <h4>🌟 限定技（全局仅一次，二选一）</h4>
-            <ul>
-                <li>💪 <b>强绷</b>：回复2点能量（被"轻松绷住"克制）</li>
-                <li>🩹 <b>绷带</b>：回复2点生命（被"破绷"克制）</li>
-                <li>被克制时：大招效果无效，但对方行动照常结算</li>
+                <li>初始能量为0，上限为3</li>
+                <li>使用某些行动会获得或消耗能量</li>
             </ul>
             <h4>📋 行动列表</h4>
             <table class="action-table">
@@ -475,15 +467,30 @@
                 <tr><td>🔋 绷住</td><td>+1</td><td>0</td><td>无</td></tr>
                 <tr><td>⚔️ 破绷</td><td>0</td><td>1</td><td>无</td></tr>
                 <tr><td>💣 绷绷炸弹</td><td>-2</td><td>3</td><td>无</td></tr>
-                <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷/强绷</td></tr>
-                <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切伤害</td></tr>
+                <tr><td>🛡️ 轻松绷住</td><td>0</td><td>0</td><td>挡破绷</td></tr>
+                <tr><td>✨ 完美绷住</td><td>-1</td><td>0</td><td>挡一切</td></tr>
             </table>
+            <h4>🌟 限定技（全局仅一次，二选一）</h4>
+            <ul>
+                <li>💪 <b>强绷</b>：回复2点能量（被"轻松绷住"克制）</li>
+                <li>🩹 <b>绷带</b>：回复2点生命（被"破绷"克制）</li>
+                <li>被克制时：大招效果无效，但对方行动照常结算</li>
+            </ul>
             <h4>⚠️ 重要规则</h4>
             <ul>
                 <li>破绷不能连续两轮使用</li>
                 <li>伤害和回血同时计算，不容易溢出</li>
                 <li>灰色按钮表示当前不可用</li>
             </ul>
+            <h4>🎮 难度说明</h4>
+<ul>
+    <li>😊 <b>简单</b>：完全随机行动</li>
+    <li>🤔 <b>普通</b>：基础攻防策略</li>
+    <li>😈 <b>困难</b>：顶级攻防策略</li>
+    <li>🧠 <b>学习</b>：顶级攻防策略基础上，观察你的习惯并针对性反制</li>
+    <li>🧠 <b>学习</b>：顶级攻防策略+观察你的习惯并针对性反制</li>
+    <li>💀 <b>地狱</b>：精确最优策略（纳什均衡）</li>
+</ul>
             <button class="close-rules-btn" onclick="toggleRules()">我知道了</button>
         </div>
     </div>
@@ -973,7 +980,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 localStorage.setItem('username', username);
                 sessionNickname = username;
                 document.getElementById('nicknameInput').value = username;
-                document.getElementById('authStatus').textContent = `✅ 已登录：${username}`;
+                document.getElementById('authStatus').textContent = `已登录：${username}`;
                 document.getElementById('authInputs').style.display = 'none';
                 updateAuthUI(true);
                 alert('注册成功！');
@@ -1000,7 +1007,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 localStorage.setItem('username', username);
                 sessionNickname = username;
                 document.getElementById('nicknameInput').value = username;
-                document.getElementById('authStatus').textContent = `✅ 已登录：${username}`;
+                document.getElementById('authStatus').textContent = `已登录：${username}`;
                 document.getElementById('authInputs').style.display = 'none';
                 updateAuthUI(true);
                 alert('登录成功！');
