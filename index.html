@@ -612,8 +612,8 @@
         function updateDisplay() {
             document.getElementById('playerHp').textContent = '❤️'.repeat(gameState.player.hp) + '🖤'.repeat(4 - gameState.player.hp);
             document.getElementById('aiHp').textContent = '❤️'.repeat(gameState.ai.hp) + '🖤'.repeat(4 - gameState.ai.hp);
-            document.getElementById('playerEnergy').textContent = '⚡ 能量：' + gameState.player.energy;
-            document.getElementById('aiEnergy').textContent = '⚡ 能量：' + gameState.ai.energy;
+            document.getElementById('playerEnergy').innerHTML = '⚡'.repeat(gameState.player.energy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - gameState.player.energy);
+document.getElementById('aiEnergy').innerHTML = '⚡'.repeat(gameState.ai.energy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - gameState.ai.energy);
             const currentStats = stats[difficulty] || { wins:0, losses:0, draws:0 };
 document.getElementById('wins').textContent = currentStats.wins;
 document.getElementById('losses').textContent = currentStats.losses;
@@ -1540,8 +1540,8 @@ const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highl
         function updateOnlineDisplay() {
             document.getElementById('onlinePlayerHp').textContent = '❤️'.repeat(onlineState.myHp) + '🖤'.repeat(4 - onlineState.myHp);
             document.getElementById('onlineOpponentHp').textContent = '❤️'.repeat(onlineState.oppHp) + '🖤'.repeat(4 - onlineState.oppHp);
-            document.getElementById('onlinePlayerEnergy').textContent = '⚡ 能量：' + onlineState.myEnergy;
-            document.getElementById('onlineOpponentEnergy').textContent = '⚡ 能量：' + onlineState.oppEnergy;
+            document.getElementById('onlinePlayerEnergy').innerHTML = '⚡'.repeat(onlineState.myEnergy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - onlineState.myEnergy);
+document.getElementById('onlineOpponentEnergy').innerHTML = '⚡'.repeat(onlineState.oppEnergy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - onlineState.oppEnergy);
             document.getElementById('onlineWins').textContent = onlineStats.wins;
             document.getElementById('onlineLosses').textContent = onlineStats.losses;
             document.getElementById('onlineDraws').textContent = onlineStats.draws;
