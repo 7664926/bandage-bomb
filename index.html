@@ -1077,8 +1077,8 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         updateDisplay(); selectDifficulty('easy');
         // ========== 单机结束 ==========
 
-               // ========== 联机 ==========
-        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false , resolvedRound: 0};
+        // ========== 联机 ==========
+        let onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false, resolvedRound: 0 };
         let onlineStats = { wins:0, losses:0, draws:0 };
         let lastRoundMessage = '';
         let sessionNickname = '';
@@ -1112,6 +1112,19 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             if (res.ok) {
                 onlineState.roomCode = code;
                 onlineState.myPlayer = 'player1';
+                onlineState.myHp = 4;
+                onlineState.oppHp = 4;
+                onlineState.myEnergy = 0;
+                onlineState.oppEnergy = 0;
+                onlineState.myUltUsed = false;
+                onlineState.oppUltUsed = false;
+                onlineState.myBreakCd = false;
+                onlineState.oppBreakCd = false;
+                onlineState.round = 1;
+                onlineState.gameOver = false;
+                onlineState.myActionSubmitted = false;
+                onlineState.rematchRequested = false;
+                onlineState.resolvedRound = 0;
                 document.getElementById('onlineMenu').style.display = 'none';
                 document.getElementById('onlineGame').style.display = 'block';
                 document.getElementById('onlinePlayerName').textContent = nickname;
@@ -1134,6 +1147,19 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             if (data.length === 0) { alert('房间不存在或已开始'); return; }
             onlineState.roomCode = code;
             onlineState.myPlayer = 'player2';
+            onlineState.myHp = 4;
+            onlineState.oppHp = 4;
+            onlineState.myEnergy = 0;
+            onlineState.oppEnergy = 0;
+            onlineState.myUltUsed = false;
+            onlineState.oppUltUsed = false;
+            onlineState.myBreakCd = false;
+            onlineState.oppBreakCd = false;
+            onlineState.round = 1;
+            onlineState.gameOver = false;
+            onlineState.myActionSubmitted = false;
+            onlineState.rematchRequested = false;
+            onlineState.resolvedRound = 0;
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${code}`, {
                 method: 'PATCH',
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -1158,7 +1184,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
                 fetch(`${SUPABASE_URL}/rest/v1/room_emotes?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
             }
-            onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false };
+            onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false, resolvedRound: 0 };
             onlineStats = { wins:0, losses:0, draws:0 };
             lastRoundMessage = '';
             myEmoteActive = false;
@@ -1244,28 +1270,26 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         }
 
         async function checkAndResolveRound(roundNum) {
-    // 查询当前回合的所有行动
-    const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-    );
-    const actions = await res.json();
-    
-    if (actions.length >= 2 && !onlineState.gameOver) {
-        const p1A = actions.find(a => a.player === 'player1');
-        const p2A = actions.find(a => a.player === 'player2');
-        if (p1A && p2A) {
-            // 双方都结算，不删除行动数据，只更新房间状态
-            await resolveOnlineRound(p1A.action, p2A.action, roundNum);
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`,
+                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+            );
+            const actions = await res.json();
+            
+            if (actions.length >= 2 && !onlineState.gameOver) {
+                const p1A = actions.find(a => a.player === 'player1');
+                const p2A = actions.find(a => a.player === 'player2');
+                if (p1A && p2A) {
+                    await resolveOnlineRound(p1A.action, p2A.action, roundNum);
+                }
+            }
         }
-    }
-}
 
         function resetOnlineGame() {
             fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}`, {
-        method: 'DELETE',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-    });
+                method: 'DELETE',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
             onlineState.myHp = 4;
             onlineState.oppHp = 4;
             onlineState.myEnergy = 0;
@@ -1278,6 +1302,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             onlineState.gameOver = false;
             onlineState.myActionSubmitted = false;
             onlineState.rematchRequested = false;
+            onlineState.resolvedRound = 0;
             lastRoundMessage = '';
             myEmoteActive = false;
             document.getElementById('rematchBtn').style.display = 'none';
@@ -1361,8 +1386,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 setTimeout(() => {
                     checkAndResolveRound(onlineState.round);
                 }, 300);
-            } 
-                            catch (e) {
+            } catch (e) {
                 onlineState.myActionSubmitted = false;
                 updateOnlineButtonStates();
                 alert('网络错误，请重试');
@@ -1383,8 +1407,12 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         }
 
         async function resolveOnlineRound(p1A, p2A, roundNum) {
-             if (onlineState.resolvedRound === roundNum) return;
-    onlineState.resolvedRound = roundNum;
+            if (onlineState.resolvedRound === roundNum) return;
+            onlineState.resolvedRound = roundNum;
+            
+            const myHpBefore = onlineState.myHp;
+            const oppHpBefore = onlineState.oppHp;
+            
             const me = {
                 hp: onlineState.myHp,
                 energy: onlineState.myEnergy,
@@ -1504,10 +1532,11 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
 
             const myDmg = dmgToMe;
             const oppDmg = dmgToOpp;
-            const myHeal = Math.max(0, me.hp - (onlineState.myHp - dmgToMe));
-            const oppHeal = Math.max(0, opp.hp - (onlineState.oppHp - dmgToOpp));
-const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
-const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
+            const myHeal = Math.max(0, me.hp - (myHpBefore - dmgToMe));
+            const oppHeal = Math.max(0, opp.hp - (oppHpBefore - dmgToOpp));
+            const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
+            const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
+            
             let msg = `上回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
             msg += `你受到${myDmg}伤害，对手受到${oppDmg}伤害`;
 
@@ -1555,7 +1584,7 @@ const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highl
             document.getElementById('onlinePlayerHp').textContent = '❤️'.repeat(onlineState.myHp) + '🖤'.repeat(4 - onlineState.myHp);
             document.getElementById('onlineOpponentHp').textContent = '❤️'.repeat(onlineState.oppHp) + '🖤'.repeat(4 - onlineState.oppHp);
             document.getElementById('onlinePlayerEnergy').innerHTML = '⚡'.repeat(onlineState.myEnergy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - onlineState.myEnergy);
-document.getElementById('onlineOpponentEnergy').innerHTML = '⚡'.repeat(onlineState.oppEnergy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - onlineState.oppEnergy);
+            document.getElementById('onlineOpponentEnergy').innerHTML = '⚡'.repeat(onlineState.oppEnergy) + '<span style="opacity:0.2">⚡</span>'.repeat(MAX_ENERGY - onlineState.oppEnergy);
             document.getElementById('onlineWins').textContent = onlineStats.wins;
             document.getElementById('onlineLosses').textContent = onlineStats.losses;
             document.getElementById('onlineDraws').textContent = onlineStats.draws;
@@ -1574,6 +1603,6 @@ document.getElementById('onlineOpponentEnergy').innerHTML = '⚡'.repeat(onlineS
             updateAuthUI(false);
         }
         // ========== 联机结束 ==========
-    </script>
+            </script>
 </body>
 </html>
