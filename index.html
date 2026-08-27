@@ -1108,7 +1108,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 document.getElementById('onlineMenu').style.display = 'none';
                 document.getElementById('onlineGame').style.display = 'block';
                 document.getElementById('onlinePlayerName').textContent = nickname;
-                document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<b>${code}</b><br>等待对手加入...`;
+                document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<span class="big-message">${code}</span><br>等待对手加入...`;
                 startRealtime();
             } else { alert('创建房间失败'); }
         }
