@@ -1258,6 +1258,10 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
 }
 
         function resetOnlineGame() {
+            fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
             onlineState.myHp = 4;
             onlineState.oppHp = 4;
             onlineState.myEnergy = 0;
@@ -1488,12 +1492,6 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                     round: roundNum + 1
                 })
             }); 
-
-            // 删除当前回合的action记录，防止旧数据干扰
-            await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
-                method: 'DELETE',
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
 
             updateOnlineDisplay();
             updateOnlineButtonStates();
