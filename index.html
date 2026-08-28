@@ -1244,12 +1244,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
             updateOnlineDisplay();
             updateOnlineButtonStates();
         }
-            const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
-            document.getElementById('onlineOpponentName').textContent = oppNickname;
-            
-            updateOnlineDisplay();
-            updateOnlineButtonStates();
-        }
+
 
         function handleActionInsert(action) {
             if (!action || action.player === onlineState.myPlayer) return;
