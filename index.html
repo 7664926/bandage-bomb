@@ -1082,8 +1082,8 @@ let onlineStats = { wins:0, losses:0, draws:0 };
 let lastRoundMessage = '';
 let sessionNickname = '';
 let myEmoteActive = false;
-let processingRound = 0; // 正在处理的回合，防止重复
-let isResolving = false; // 全局结算锁
+let processingRound = 0;
+let isResolving = false;
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1283,9 +1283,7 @@ function handleEmoteInsert(emote) {
 }
 
 async function tryResolve(roundNum) {
-    // 防止并发结算
     if (isResolving) {
-        // 如果正在结算，等待后重试
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (isResolving) return;
     }
@@ -1296,19 +1294,16 @@ async function tryResolve(roundNum) {
     processingRound = roundNum;
     
     try {
-        // 检查房间当前状态
         const roomCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         const roomCheckData = await roomCheck.json();
         if (roomCheckData.length === 0 || roomCheckData[0].round !== roundNum) {
-            return; // 房间不存在或回合已结算
+            return;
         }
         
-        // 获取该回合的所有动作
         let actions = await fetchActions(roundNum);
         
-        // 如果不够2条，重试几次
         for (let i = 0; i < 3 && actions.length < 2; i++) {
             await new Promise(resolve => setTimeout(resolve, 500));
             actions = await fetchActions(roundNum);
@@ -1316,31 +1311,27 @@ async function tryResolve(roundNum) {
         
         if (actions.length < 2) return;
         
-        // 去重：每个玩家只取最新的一条
         const p1Actions = actions.filter(a => a.player === 'player1');
         const p2Actions = actions.filter(a => a.player === 'player2');
         
         if (p1Actions.length === 0 || p2Actions.length === 0) return;
         
-        // 按id排序，取最新的
         p1Actions.sort((a, b) => b.id - a.id);
         p2Actions.sort((a, b) => b.id - a.id);
         
         const p1A = p1Actions[0].action;
         const p2A = p2Actions[0].action;
         
-        // 再次检查房间状态，确保没有其他客户端已经结算
         const finalCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         const finalCheckData = await finalCheck.json();
         if (finalCheckData.length === 0 || finalCheckData[0].round !== roundNum) {
-            return; // 已被其他客户端结算
+            return;
         }
         
         await resolveOnlineRound(p1A, p2A, roundNum);
         
-        // 清理已结算的动作
         await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
             method: 'DELETE',
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
@@ -1458,14 +1449,12 @@ function displayOpponentEmote(emote) {
 async function onlineAction(action) {
     if (onlineState.gameOver || onlineState.myActionSubmitted) return;
     
-    // 先检查是否已经提交过这个回合的动作
     const existingCheck = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`, {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     });
     const existingData = await existingCheck.json();
     
     if (existingData.length > 0) {
-        // 已经提交过，直接标记为已提交
         onlineState.myActionSubmitted = true;
         updateOnlineButtonStates();
         return;
@@ -1491,7 +1480,6 @@ async function onlineAction(action) {
         sendStats(action, 'online');
         document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
         
-        // 延迟一下再检查，让实时订阅有时间推送
         setTimeout(() => {
             tryResolve(onlineState.round);
         }, 300);
@@ -1521,11 +1509,10 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     });
     const roomData = await roomRes.json();
-    if (roomData.length === 0) return;
+    if (roomData.length === 0) return null;
     const room = roomData[0];
     
-    // 关键：检查这个回合是否已经被结算了
-    if (room.round !== roundNum) return;
+    if (room.round !== roundNum) return null;
     
     const myHpBefore = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
     const oppHpBefore = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
@@ -1599,38 +1586,6 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     const player1Break = onlineState.myPlayer === 'player1' ? myBreak : oppBreak;
     const player2Break = onlineState.myPlayer === 'player1' ? oppBreak : myBreak;
     
-    // 先更新本地状态
-    onlineState.myHp = myHp;
-    onlineState.oppHp = oppHp;
-    onlineState.myEnergy = myEnergy;
-    onlineState.oppEnergy = oppEnergy;
-    onlineState.myUltUsed = myUlt;
-    onlineState.oppUltUsed = oppUlt;
-    onlineState.myBreakCd = myBreak;
-    onlineState.oppBreakCd = oppBreak;
-    onlineState.round = roundNum + 1;
-    onlineState.myActionSubmitted = false;
-    
-    // 更新数据库
-    await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-        method: 'PATCH',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
-            player1_hp: player1Hp,
-            player2_hp: player2Hp,
-            player1_energy: player1Energy,
-            player2_energy: player2Energy,
-            player1_ult_used: player1Ult,
-            player2_ult_used: player2Ult,
-            player1_break_cd: player1Break,
-            player2_break_cd: player2Break,
-            round: roundNum + 1
-        })
-    });
-    
-    updateOnlineDisplay();
-    updateOnlineButtonStates();
-    
     const myHeal = Math.max(0, myHp - (myHpBefore - dmgToMe));
     const oppHeal = Math.max(0, oppHp - (oppHpBefore - dmgToOpp));
     
@@ -1667,6 +1622,37 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     }
     
     lastRoundMessage = msg;
+    
+    onlineState.myHp = myHp;
+    onlineState.oppHp = oppHp;
+    onlineState.myEnergy = myEnergy;
+    onlineState.oppEnergy = oppEnergy;
+    onlineState.myUltUsed = myUlt;
+    onlineState.oppUltUsed = oppUlt;
+    onlineState.myBreakCd = myBreak;
+    onlineState.oppBreakCd = oppBreak;
+    onlineState.round = roundNum + 1;
+    onlineState.myActionSubmitted = false;
+    
+    await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+            player1_hp: player1Hp,
+            player2_hp: player2Hp,
+            player1_energy: player1Energy,
+            player2_energy: player2Energy,
+            player1_ult_used: player1Ult,
+            player2_ult_used: player2Ult,
+            player1_break_cd: player1Break,
+            player2_break_cd: player2Break,
+            round: roundNum + 1
+        })
+    });
+    
+    updateOnlineDisplay();
+    updateOnlineButtonStates();
+    
     document.getElementById('onlineMessage').innerHTML = msg;
     
     if (onlineState.gameOver) {
@@ -1674,6 +1660,8 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         document.getElementById('rematchBtn').disabled = false;
         updateOnlineButtonStates();
     }
+    
+    return msg;
 }
 
 function updateOnlineDisplay() {
@@ -1699,6 +1687,6 @@ if (savedUserId && savedUsername) {
     updateAuthUI(false);
 }
 // ========== 联机结束 ==========
-            </script>
+          </script>
 </body>
 </html>
