@@ -1083,6 +1083,7 @@ let lastRoundMessage = '';
 let sessionNickname = '';
 let myEmoteActive = false;
 let currentRoundActions = {};
+let isResolving = false;
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1162,6 +1163,7 @@ function leaveRoom() {
     onlineStats = { wins:0, losses:0, draws:0 };
     lastRoundMessage = '';
     currentRoundActions = {};
+    isResolving = false;
     myEmoteActive = false;
     document.getElementById('onlineGame').style.display = 'none';
     document.getElementById('onlineMenu').style.display = 'block';
@@ -1222,7 +1224,6 @@ function handleRoomChange(room) {
     onlineState.oppBreakCd = onlineState.myPlayer === 'player1' ? room.player2_break_cd : room.player1_break_cd;
     onlineState.round = room.round;
     
-    // 从数据库读取战斗消息
     if (room.last_message) {
         lastRoundMessage = room.last_message;
     }
@@ -1237,12 +1238,10 @@ function handleRoomChange(room) {
     const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
     document.getElementById('onlineOpponentName').textContent = oppNickname;
     
-    // 回合变化时处理
     if (prevRound !== room.round) {
         onlineState.myActionSubmitted = false;
         currentRoundActions = {};
         
-        // 游戏结束
         if (onlineState.myHp === 0 || onlineState.oppHp === 0) {
             if (!onlineState.gameOver) {
                 onlineState.gameOver = true;
@@ -1262,9 +1261,7 @@ function handleRoomChange(room) {
                 document.getElementById('rematchBtn').disabled = false;
                 saveUserData();
             }
-        } 
-        // 对局中
-        else {
+        } else {
             if (lastRoundMessage) {
                 document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
             } else {
@@ -1279,28 +1276,56 @@ function handleRoomChange(room) {
 
 function handleActionInsert(action) {
     if (!action) return;
-    
     if (action.round !== onlineState.round) return;
     
-    currentRoundActions[action.player] = action.action;
-    
-    if (onlineState.myPlayer === 'player1') {
-        if (currentRoundActions['player1'] && currentRoundActions['player2']) {
-            const p1Action = currentRoundActions['player1'];
-            const p2Action = currentRoundActions['player2'];
-            currentRoundActions = {};
-            resolveOnlineRound(p1Action, p2Action, action.round);
-        }
-    } else {
-        if (action.player === 'player1' && onlineState.myActionSubmitted) {
-            document.getElementById('onlineMessage').textContent = '⏳ 等待结算...';
-        }
-    }
+    checkBothActionsAndResolve();
 }
 
 function handleEmoteInsert(emote) {
     if (!emote || emote.player === onlineState.myPlayer) return;
     displayOpponentEmote(emote.emote);
+}
+
+async function checkBothActionsAndResolve() {
+    if (isResolving) return;
+    if (onlineState.gameOver) return;
+    
+    try {
+        // 先获取房间当前回合
+        const roomCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const roomData = await roomCheck.json();
+        if (roomData.length === 0) return;
+        
+        const currentRound = roomData[0].round;
+        
+        // 只查询当前回合的动作
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${currentRound}&order=id.asc`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const actions = await res.json();
+        
+        if (actions.length >= 2) {
+            const p1Action = actions.find(a => a.player === 'player1');
+            const p2Action = actions.find(a => a.player === 'player2');
+            
+            if (p1Action && p2Action) {
+                isResolving = true;
+                if (onlineState.myPlayer === 'player1') {
+                    await resolveOnlineRound(p1Action.action, p2Action.action, currentRound);
+                }
+                isResolving = false;
+            }
+        } else {
+            if (onlineState.myActionSubmitted) {
+                document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
+            }
+        }
+    } catch (e) {
+        console.log('查询失败:', e);
+        isResolving = false;
+    }
 }
 
 function resetOnlineGame() {
@@ -1340,6 +1365,7 @@ function resetOnlineGame() {
     onlineState.rematchRequested = false;
     lastRoundMessage = '';
     currentRoundActions = {};
+    isResolving = false;
     myEmoteActive = false;
     document.getElementById('rematchBtn').style.display = 'none';
     document.getElementById('rematchBtn').disabled = false;
@@ -1405,33 +1431,35 @@ async function onlineAction(action) {
     updateOnlineButtonStates();
 
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
-            method: 'POST',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: onlineState.round })
+        // 先清理旧回合的残留数据
+        await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=lt.${onlineState.round}`, {
+            method: 'DELETE',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
+        
+        // 检查当前回合是否已经插入过
+        const existingCheck = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const existingData = await existingCheck.json();
+        
+        if (existingData.length === 0) {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: onlineState.round })
+            });
 
-        if (!res.ok) {
-            onlineState.myActionSubmitted = false;
-            updateOnlineButtonStates();
-            alert('出招失败，请重试');
-            return;
+            if (!res.ok) {
+                onlineState.myActionSubmitted = false;
+                updateOnlineButtonStates();
+                alert('出招失败，请重试');
+                return;
+            }
         }
 
         sendStats(action, 'online');
-        
-        currentRoundActions[onlineState.myPlayer] = action;
-        
-        if (onlineState.myPlayer === 'player1' && 
-            currentRoundActions['player1'] && 
-            currentRoundActions['player2']) {
-            const p1Action = currentRoundActions['player1'];
-            const p2Action = currentRoundActions['player2'];
-            currentRoundActions = {};
-            await resolveOnlineRound(p1Action, p2Action, onlineState.round);
-        } else {
-            document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
-        }
+        await checkBothActionsAndResolve();
         
     } catch (e) {
         onlineState.myActionSubmitted = false;
@@ -1583,7 +1611,7 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     onlineState.round = roundNum + 1;
     onlineState.myActionSubmitted = false;
     
-    // 更新数据库，包括战斗消息
+    // 更新数据库
     await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -1601,6 +1629,7 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         })
     });
     
+    // 清理已结算回合的动作
     await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
         method: 'DELETE',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
