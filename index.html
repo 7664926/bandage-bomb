@@ -1365,35 +1365,37 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         }
 
         async function onlineAction(action) {
-            if (onlineState.gameOver || onlineState.myActionSubmitted) return;
-            onlineState.myActionSubmitted = true;
+    if (onlineState.gameOver || onlineState.myActionSubmitted) return;
+    onlineState.myActionSubmitted = true;
+    updateOnlineButtonStates();
+    
+    const submittedRound = onlineState.round;  // 保存提交时的回合号
+
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: submittedRound })
+        });
+
+        if (!res.ok) {
+            onlineState.myActionSubmitted = false;
             updateOnlineButtonStates();
-
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions`, {
-                    method: 'POST',
-                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                    body: JSON.stringify({ room_code: onlineState.roomCode, player: onlineState.myPlayer, action: action, round: onlineState.round })
-                });
-
-                if (!res.ok) {
-                    onlineState.myActionSubmitted = false;
-                    updateOnlineButtonStates();
-                    alert('出招失败，请重试');
-                    return;
-                }
-
-                sendStats(action, 'online');
-                document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
-                setTimeout(() => {
-                    checkAndResolveRound(onlineState.round);
-                }, 300);
-            } catch (e) {
-                onlineState.myActionSubmitted = false;
-                updateOnlineButtonStates();
-                alert('网络错误，请重试');
-            }
+            alert('出招失败，请重试');
+            return;
         }
+
+        sendStats(action, 'online');
+        document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
+        setTimeout(() => {
+            checkAndResolveRound(submittedRound);  // 用保存的回合号
+        }, 300);
+    } catch (e) {
+        onlineState.myActionSubmitted = false;
+        updateOnlineButtonStates();
+        alert('网络错误，请重试');
+    }
+}
 
         async function requestRematch() {
             if (!onlineState.gameOver || onlineState.rematchRequested) return;
