@@ -1208,8 +1208,10 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 .subscribe();
         }
 
-        function handleRoomChange(room) {
+               function handleRoomChange(room) {
             if (!room) return;
+            
+            const prevRound = onlineState.round;
             
             onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
             onlineState.oppHp = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
@@ -1228,6 +1230,20 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
                 return;
             }
             
+            const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
+            document.getElementById('onlineOpponentName').textContent = oppNickname;
+            
+            // 关键修复：round变化时恢复按钮并显示结算信息
+            if (prevRound !== room.round) {
+                onlineState.myActionSubmitted = false;
+                if (lastRoundMessage) {
+                    document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+                }
+            }
+            
+            updateOnlineDisplay();
+            updateOnlineButtonStates();
+        }
             const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
             document.getElementById('onlineOpponentName').textContent = oppNickname;
             
