@@ -1234,25 +1234,28 @@ function handleRoomChange(room) {
     const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
     document.getElementById('onlineOpponentName').textContent = oppNickname;
     
-    // round变化时恢复
+    // round变化时处理
     if (prevRound !== room.round) {
         onlineState.myActionSubmitted = false;
         
         // 游戏结束
         if (onlineState.myHp === 0 || onlineState.oppHp === 0) {
             if (!onlineState.gameOver) {
+                // 构建完整的结束消息：操作详情 + 结束语
+                let endMessage = lastRoundMessage || '';
                 if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
                     onlineStats.draws++;
-                    lastRoundMessage = '<span class="big-message">🤝 平局。旗鼓相当的对手。</span>';
+                    endMessage += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
                 } else if (onlineState.myHp === 0) {
                     onlineStats.losses++;
-                    lastRoundMessage = '<span class="big-message">😢 遗憾落败......</span>';
+                    endMessage += `<br><span class="big-message">😢 遗憾落败......</span>`;
                 } else {
                     onlineStats.wins++;
-                    lastRoundMessage = '<span class="big-message">🎉 恭喜！大获全胜！</span>';
+                    endMessage += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
                 }
+                lastRoundMessage = endMessage;
                 onlineState.gameOver = true;
-                document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+                document.getElementById('onlineMessage').innerHTML = endMessage;
                 document.getElementById('rematchBtn').style.display = 'block';
                 document.getElementById('rematchBtn').disabled = false;
                 saveUserData();
@@ -1592,7 +1595,8 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
     const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
     
-    let msg = `上回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
+    // 构建操作详情消息（不包含结束语）
+    let msg = `第${roundNum}回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
     msg += `你受到${dmgToMe}伤害，对手受到${dmgToOpp}伤害`;
     
     if (myHeal > 0 || oppHeal > 0) {
@@ -1604,6 +1608,7 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     if (myUltBlocked) msg += `<br>💥 你的大招被克制！💥`;
     if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！💥`;
     
+    // 检查是否游戏结束
     if (myHp === 0 && oppHp === 0) {
         msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
         onlineStats.draws++;
@@ -1621,8 +1626,10 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         saveUserData();
     }
     
+    // 保存完整的消息（包括结束语）
     lastRoundMessage = msg;
     
+    // 更新本地状态
     onlineState.myHp = myHp;
     onlineState.oppHp = oppHp;
     onlineState.myEnergy = myEnergy;
@@ -1634,6 +1641,7 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     onlineState.round = roundNum + 1;
     onlineState.myActionSubmitted = false;
     
+    // 更新数据库
     await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -1650,9 +1658,11 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         })
     });
     
+    // 更新显示
     updateOnlineDisplay();
     updateOnlineButtonStates();
     
+    // 立即显示完整消息
     document.getElementById('onlineMessage').innerHTML = msg;
     
     if (onlineState.gameOver) {
