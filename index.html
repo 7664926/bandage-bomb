@@ -1170,14 +1170,12 @@ function leaveRoom() {
     document.querySelectorAll('.emote-float').forEach(el => el.remove());
 }
 
-// 轮询：每秒检查一次房间状态和动作
 function startPolling() {
     stopPolling();
     pollTimer = setInterval(async () => {
         if (!onlineState.roomCode) return;
         
         try {
-            // 1. 获取房间状态
             const roomRes = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
             });
@@ -1185,28 +1183,42 @@ function startPolling() {
             if (roomData.length === 0) return;
             const room = roomData[0];
             
-            // 2. 处理房间变化
+            const prevRound = onlineState.round;
+            
             handleRoomChange(room);
             
-            // 3. 获取当前回合动作
-            const actionsRes = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${room.round}&order=id.asc`, {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-            });
-            const actions = await actionsRes.json();
+            // player1 检查是否需要结算
+            if (onlineState.myPlayer === 'player1' && !onlineState.gameOver) {
+                const actionsRes = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${room.round}&order=id.asc`, {
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
+                const actions = await actionsRes.json();
+                
+                if (actions.length >= 2) {
+                    const p1Action = actions.find(a => a.player === 'player1');
+                    const p2Action = actions.find(a => a.player === 'player2');
+                    if (p1Action && p2Action) {
+                        await resolveOnlineRound(p1Action.action, p2Action.action, room.round);
+                    }
+                }
+            }
             
-            // 4. 如果双方都出招了且我是player1，结算
-            if (actions.length >= 2 && onlineState.myPlayer === 'player1') {
-                const p1Action = actions.find(a => a.player === 'player1');
-                const p2Action = actions.find(a => a.player === 'player2');
-                if (p1Action && p2Action) {
-                    await resolveOnlineRound(p1Action.action, p2Action.action, room.round);
+            // player2 检测到回合变化后渲染消息
+            if (prevRound !== room.round && room.round > 1 && onlineState.myPlayer === 'player2') {
+                if (room.last_message) {
+                    try {
+                        const battleData = JSON.parse(room.last_message);
+                        renderBattleMessageFromData(battleData);
+                    } catch(e) {
+                        document.getElementById('onlineMessage').textContent = '选择你的行动';
+                    }
                 }
             }
             
         } catch (e) {
             console.log('轮询失败:', e);
         }
-    }, 1000);
+    }, 500);
 }
 
 function stopPolling() {
@@ -1230,10 +1242,6 @@ function handleRoomChange(room) {
     onlineState.myBreakCd = onlineState.myPlayer === 'player1' ? room.player1_break_cd : room.player2_break_cd;
     onlineState.oppBreakCd = onlineState.myPlayer === 'player1' ? room.player2_break_cd : room.player1_break_cd;
     onlineState.round = room.round;
-    
-    if (room.last_message) {
-        lastRoundMessage = room.last_message;
-    }
     
     const p1Rematch = room.player1_rematch || false;
     const p2Rematch = room.player2_rematch || false;
@@ -1259,19 +1267,9 @@ function handleRoomChange(room) {
                     onlineStats.wins++;
                 }
                 
-                if (lastRoundMessage) {
-                    document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
-                }
-                
                 document.getElementById('rematchBtn').style.display = 'block';
                 document.getElementById('rematchBtn').disabled = false;
                 saveUserData();
-            }
-        } else {
-            if (lastRoundMessage) {
-                document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
-            } else {
-                document.getElementById('onlineMessage').textContent = '选择你的行动';
             }
         }
     }
@@ -1381,13 +1379,11 @@ async function onlineAction(action) {
     updateOnlineButtonStates();
 
     try {
-        // 先清理旧回合的残留数据
         await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=lt.${onlineState.round}`, {
             method: 'DELETE',
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         
-        // 检查当前回合是否已经插入过
         const existingCheck = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -1441,141 +1437,112 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     
     if (room.round !== roundNum) return;
     
-    const myHpBefore = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
-    const oppHpBefore = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
-    const myEnergyBefore = onlineState.myPlayer === 'player1' ? room.player1_energy : room.player2_energy;
-    const oppEnergyBefore = onlineState.myPlayer === 'player1' ? room.player2_energy : room.player1_energy;
-    const myUltBefore = onlineState.myPlayer === 'player1' ? room.player1_ult_used : room.player2_ult_used;
-    const oppUltBefore = onlineState.myPlayer === 'player1' ? room.player2_ult_used : room.player1_ult_used;
+    // 以 player1 视角计算
+    let dmgToP1 = getDamage(p2A);
+    let dmgToP2 = getDamage(p1A);
+    if (p1A === '完美绷住' || (p1A === '轻松绷住' && p2A === '破绷')) dmgToP1 = 0;
+    if (p2A === '完美绷住' || (p2A === '轻松绷住' && p1A === '破绷')) dmgToP2 = 0;
     
-    let myAction, oppAction;
+    let healP1 = 0, healP2 = 0, egP1 = 0, egP2 = 0;
+    let p1UltBlocked = false, p2UltBlocked = false;
+    
+    if (p1A === '强绷') { if (p2A === '轻松绷住') p1UltBlocked = true; else egP1 = 2; }
+    if (p1A === '绷带') { if (p2A === '破绷') p1UltBlocked = true; else healP1 = 2; }
+    if (p2A === '强绷') { if (p1A === '轻松绷住') p2UltBlocked = true; else egP2 = 2; }
+    if (p2A === '绷带') { if (p1A === '破绷') p2UltBlocked = true; else healP2 = 2; }
+    if (p1A === '绷住') egP1 = 1;
+    if (p1A === '绷绷炸弹') egP1 = -2;
+    if (p1A === '完美绷住') egP1 = -1;
+    if (p2A === '绷住') egP2 = 1;
+    if (p2A === '绷绷炸弹') egP2 = -2;
+    if (p2A === '完美绷住') egP2 = -1;
+    
+    let p1Hp = Math.max(0, Math.min(MAX_HP, room.player1_hp + healP1 - dmgToP1));
+    let p2Hp = Math.max(0, Math.min(MAX_HP, room.player2_hp + healP2 - dmgToP2));
+    let p1Energy = Math.max(0, Math.min(MAX_ENERGY, room.player1_energy + egP1));
+    let p2Energy = Math.max(0, Math.min(MAX_ENERGY, room.player2_energy + egP2));
+    let p1Ult = room.player1_ult_used || p1A === '强绷' || p1A === '绷带';
+    let p2Ult = room.player2_ult_used || p2A === '强绷' || p2A === '绷带';
+    let p1Break = p1A === '破绷';
+    let p2Break = p2A === '破绷';
+    
+    const healP1Actual = Math.max(0, p1Hp - (room.player1_hp - dmgToP1));
+    const healP2Actual = Math.max(0, p2Hp - (room.player2_hp - dmgToP2));
+    
+    // 构建客观战斗数据 JSON
+    const battleData = {
+        round: roundNum,
+        p1A: p1A,
+        p2A: p2A,
+        dmgToP1: dmgToP1,
+        dmgToP2: dmgToP2,
+        healP1: healP1Actual,
+        healP2: healP2Actual,
+        p1UltBlocked: p1UltBlocked,
+        p2UltBlocked: p2UltBlocked,
+        p1HpFinal: p1Hp,
+        p2HpFinal: p2Hp
+    };
+    
+    const lastMessageStr = JSON.stringify(battleData);
+    
+    // 更新本地状态
     if (onlineState.myPlayer === 'player1') {
-        myAction = p1A;
-        oppAction = p2A;
+        onlineState.myHp = p1Hp;
+        onlineState.oppHp = p2Hp;
+        onlineState.myEnergy = p1Energy;
+        onlineState.oppEnergy = p2Energy;
+        onlineState.myUltUsed = p1Ult;
+        onlineState.oppUltUsed = p2Ult;
+        onlineState.myBreakCd = p1Break;
+        onlineState.oppBreakCd = p2Break;
     } else {
-        myAction = p2A;
-        oppAction = p1A;
+        onlineState.myHp = p2Hp;
+        onlineState.oppHp = p1Hp;
+        onlineState.myEnergy = p2Energy;
+        onlineState.oppEnergy = p1Energy;
+        onlineState.myUltUsed = p2Ult;
+        onlineState.oppUltUsed = p1Ult;
+        onlineState.myBreakCd = p2Break;
+        onlineState.oppBreakCd = p1Break;
     }
     
-    let dmgToMe = getDamage(oppAction);
-    let dmgToOpp = getDamage(myAction);
-    
-    if (myAction === '完美绷住' || (myAction === '轻松绷住' && oppAction === '破绷')) dmgToMe = 0;
-    if (oppAction === '完美绷住' || (oppAction === '轻松绷住' && myAction === '破绷')) dmgToOpp = 0;
-    
-    let healToMe = 0, healToOpp = 0, egMe = 0, egOpp = 0;
-    let myUltBlocked = false, oppUltBlocked = false;
-    
-    if (myAction === '强绷') {
-        if (oppAction === '轻松绷住') myUltBlocked = true;
-        else egMe = 2;
-    }
-    if (myAction === '绷带') {
-        if (oppAction === '破绷') myUltBlocked = true;
-        else healToMe = 2;
-    }
-    if (oppAction === '强绷') {
-        if (myAction === '轻松绷住') oppUltBlocked = true;
-        else egOpp = 2;
-    }
-    if (oppAction === '绷带') {
-        if (myAction === '破绷') oppUltBlocked = true;
-        else healToOpp = 2;
-    }
-    
-    if (myAction === '绷住') egMe = 1;
-    if (myAction === '绷绷炸弹') egMe = -2;
-    if (myAction === '完美绷住') egMe = -1;
-    if (oppAction === '绷住') egOpp = 1;
-    if (oppAction === '绷绷炸弹') egOpp = -2;
-    if (oppAction === '完美绷住') egOpp = -1;
-    
-    let myHp = myHpBefore + healToMe - dmgToMe;
-    let oppHp = oppHpBefore + healToOpp - dmgToOpp;
-    myHp = Math.max(0, Math.min(MAX_HP, myHp));
-    oppHp = Math.max(0, Math.min(MAX_HP, oppHp));
-    
-    let myEnergy = Math.max(0, Math.min(MAX_ENERGY, myEnergyBefore + egMe));
-    let oppEnergy = Math.max(0, Math.min(MAX_ENERGY, oppEnergyBefore + egOpp));
-    
-    let myUlt = myUltBefore || myAction === '强绷' || myAction === '绷带';
-    let oppUlt = oppUltBefore || oppAction === '强绷' || oppAction === '绷带';
-    
-    let myBreak = myAction === '破绷';
-    let oppBreak = oppAction === '破绷';
-    
-    const player1Hp = onlineState.myPlayer === 'player1' ? myHp : oppHp;
-    const player2Hp = onlineState.myPlayer === 'player1' ? oppHp : myHp;
-    const player1Energy = onlineState.myPlayer === 'player1' ? myEnergy : oppEnergy;
-    const player2Energy = onlineState.myPlayer === 'player1' ? oppEnergy : myEnergy;
-    const player1Ult = onlineState.myPlayer === 'player1' ? myUlt : oppUlt;
-    const player2Ult = onlineState.myPlayer === 'player1' ? oppUlt : myUlt;
-    const player1Break = onlineState.myPlayer === 'player1' ? myBreak : oppBreak;
-    const player2Break = onlineState.myPlayer === 'player1' ? oppBreak : myBreak;
-    
-    const myHeal = Math.max(0, myHp - (myHpBefore - dmgToMe));
-    const oppHeal = Math.max(0, oppHp - (oppHpBefore - dmgToOpp));
-    
-    const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
-    const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
-    
-    let msg = `第${roundNum}回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
-    msg += `你受到${dmgToMe}伤害，对手受到${dmgToOpp}伤害`;
-    
-    if (myHeal > 0 || oppHeal > 0) {
-        if (myHeal > 0 && oppHeal > 0) msg += `<br>你回复${myHeal}血，对手回复${oppHeal}血`;
-        else if (myHeal > 0) msg += `<br>你回复了${myHeal}血`;
-        else msg += `<br>对手回复了${oppHeal}血`;
-    }
-    
-    if (myUltBlocked) msg += `<br>💥 你的大招被克制！💥`;
-    if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！💥`;
-    
-    if (myHp === 0 && oppHp === 0) {
-        msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
-        onlineStats.draws++;
-        onlineState.gameOver = true;
-        saveUserData();
-    } else if (myHp === 0) {
-        msg += `<br><span class="big-message">😢 遗憾落败......</span>`;
-        onlineStats.losses++;
-        onlineState.gameOver = true;
-        saveUserData();
-    } else if (oppHp === 0) {
-        msg += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
-        onlineStats.wins++;
-        onlineState.gameOver = true;
-        saveUserData();
-    }
-    
-    lastRoundMessage = msg;
-    
-    onlineState.myHp = myHp;
-    onlineState.oppHp = oppHp;
-    onlineState.myEnergy = myEnergy;
-    onlineState.oppEnergy = oppEnergy;
-    onlineState.myUltUsed = myUlt;
-    onlineState.oppUltUsed = oppUlt;
-    onlineState.myBreakCd = myBreak;
-    onlineState.oppBreakCd = oppBreak;
     onlineState.round = roundNum + 1;
     onlineState.myActionSubmitted = false;
+    
+    // 判断胜负
+    if (p1Hp === 0 && p2Hp === 0) {
+        onlineStats.draws++;
+        onlineState.gameOver = true;
+    } else if (p1Hp === 0) {
+        if (onlineState.myPlayer === 'player1') onlineStats.losses++;
+        else onlineStats.wins++;
+        onlineState.gameOver = true;
+    } else if (p2Hp === 0) {
+        if (onlineState.myPlayer === 'player1') onlineStats.wins++;
+        else onlineStats.losses++;
+        onlineState.gameOver = true;
+    }
+    
+    if (onlineState.gameOver) {
+        saveUserData();
+    }
     
     // 更新数据库
     await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
-            player1_hp: player1Hp,
-            player2_hp: player2Hp,
-            player1_energy: player1Energy,
-            player2_energy: player2Energy,
-            player1_ult_used: player1Ult,
-            player2_ult_used: player2Ult,
-            player1_break_cd: player1Break,
-            player2_break_cd: player2Break,
+            player1_hp: p1Hp,
+            player2_hp: p2Hp,
+            player1_energy: p1Energy,
+            player2_energy: p2Energy,
+            player1_ult_used: p1Ult,
+            player2_ult_used: p2Ult,
+            player1_break_cd: p1Break,
+            player2_break_cd: p2Break,
             round: roundNum + 1,
-            last_message: msg
+            last_message: lastMessageStr
         })
     });
     
@@ -1588,13 +1555,65 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     updateOnlineDisplay();
     updateOnlineButtonStates();
     
-    document.getElementById('onlineMessage').innerHTML = msg;
+    // 渲染战斗消息（player1 自己的视角）
+    renderBattleMessageFromData(battleData);
     
     if (onlineState.gameOver) {
         document.getElementById('rematchBtn').style.display = 'block';
         document.getElementById('rematchBtn').disabled = false;
         updateOnlineButtonStates();
     }
+}
+
+// 根据客观数据渲染当前玩家的视角
+function renderBattleMessageFromData(data) {
+    let myAction, oppAction, dmgToMe, dmgToOpp, healMe, healOpp, myUltBlocked, oppUltBlocked;
+    
+    if (onlineState.myPlayer === 'player1') {
+        myAction = data.p1A;
+        oppAction = data.p2A;
+        dmgToMe = data.dmgToP1;
+        dmgToOpp = data.dmgToP2;
+        healMe = data.healP1;
+        healOpp = data.healP2;
+        myUltBlocked = data.p1UltBlocked;
+        oppUltBlocked = data.p2UltBlocked;
+    } else {
+        myAction = data.p2A;
+        oppAction = data.p1A;
+        dmgToMe = data.dmgToP2;
+        dmgToOpp = data.dmgToP1;
+        healMe = data.healP2;
+        healOpp = data.healP1;
+        myUltBlocked = data.p2UltBlocked;
+        oppUltBlocked = data.p1UltBlocked;
+    }
+    
+    const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
+    const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
+    
+    let msg = `第${data.round}回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
+    msg += `你受到${dmgToMe}伤害，对手受到${dmgToOpp}伤害`;
+    
+    if (healMe > 0 || healOpp > 0) {
+        if (healMe > 0 && healOpp > 0) msg += `<br>你回复${healMe}血，对手回复${healOpp}血`;
+        else if (healMe > 0) msg += `<br>你回复了${healMe}血`;
+        else msg += `<br>对手回复了${healOpp}血`;
+    }
+    
+    if (myUltBlocked) msg += `<br>💥 你的大招被克制！💥`;
+    if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！💥`;
+    
+    if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
+        msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
+    } else if (onlineState.myHp === 0) {
+        msg += `<br><span class="big-message">😢 遗憾落败......</span>`;
+    } else if (onlineState.oppHp === 0) {
+        msg += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
+    }
+    
+    lastRoundMessage = msg;
+    document.getElementById('onlineMessage').innerHTML = msg;
 }
 
 function updateOnlineDisplay() {
