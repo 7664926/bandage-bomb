@@ -1082,8 +1082,7 @@ let onlineStats = { wins:0, losses:0, draws:0 };
 let lastRoundMessage = '';
 let sessionNickname = '';
 let myEmoteActive = false;
-let currentRoundActions = {};
-let isResolving = false;
+let pollTimer = null;
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1119,7 +1118,7 @@ async function createRoom() {
         document.getElementById('onlineMessage').innerHTML = `🏠 房间号：<span class="big-message">${code}</span><br>等待对手加入...`;
         updateOnlineDisplay();
         updateOnlineButtonStates();
-        startRealtime();
+        startPolling();
     } else { alert('创建房间失败'); }
 }
 
@@ -1146,14 +1145,11 @@ async function joinRoom() {
     document.getElementById('onlineMessage').innerHTML = '<span class="big-message">🎮 游戏开始！</span>选择你的行动';
     updateOnlineDisplay();
     updateOnlineButtonStates();
-    startRealtime();
+    startPolling();
 }
 
 function leaveRoom() {
-    if (onlineState.channel) {
-        onlineState.channel.unsubscribe();
-        onlineState.channel = null;
-    }
+    stopPolling();
     if (onlineState.roomCode) {
         fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
         fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
@@ -1162,8 +1158,6 @@ function leaveRoom() {
     onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false };
     onlineStats = { wins:0, losses:0, draws:0 };
     lastRoundMessage = '';
-    currentRoundActions = {};
-    isResolving = false;
     myEmoteActive = false;
     document.getElementById('onlineGame').style.display = 'none';
     document.getElementById('onlineMenu').style.display = 'block';
@@ -1176,37 +1170,50 @@ function leaveRoom() {
     document.querySelectorAll('.emote-float').forEach(el => el.remove());
 }
 
-function startRealtime() {
-    if (onlineState.channel) {
-        onlineState.channel.unsubscribe();
-    }
-    
-    onlineState.channel = supabaseClient
-        .channel(`room-${onlineState.roomCode}`)
-        .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'rooms', filter: `room_code=eq.${onlineState.roomCode}` },
-            (payload) => {
-                if (payload.eventType === 'DELETE') {
-                    leaveRoom();
-                    alert('房间已解散');
-                    return;
+// 轮询：每秒检查一次房间状态和动作
+function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(async () => {
+        if (!onlineState.roomCode) return;
+        
+        try {
+            // 1. 获取房间状态
+            const roomRes = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
+            const roomData = await roomRes.json();
+            if (roomData.length === 0) return;
+            const room = roomData[0];
+            
+            // 2. 处理房间变化
+            handleRoomChange(room);
+            
+            // 3. 获取当前回合动作
+            const actionsRes = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${room.round}&order=id.asc`, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+            });
+            const actions = await actionsRes.json();
+            
+            // 4. 如果双方都出招了且我是player1，结算
+            if (actions.length >= 2 && onlineState.myPlayer === 'player1') {
+                const p1Action = actions.find(a => a.player === 'player1');
+                const p2Action = actions.find(a => a.player === 'player2');
+                if (p1Action && p2Action) {
+                    await resolveOnlineRound(p1Action.action, p2Action.action, room.round);
                 }
-                handleRoomChange(payload.new || payload.old);
             }
-        )
-        .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'room_actions', filter: `room_code=eq.${onlineState.roomCode}` },
-            (payload) => {
-                handleActionInsert(payload.new);
-            }
-        )
-        .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'room_emotes', filter: `room_code=eq.${onlineState.roomCode}` },
-            (payload) => {
-                handleEmoteInsert(payload.new);
-            }
-        )
-        .subscribe();
+            
+        } catch (e) {
+            console.log('轮询失败:', e);
+        }
+    }, 1000);
+}
+
+function stopPolling() {
+    if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+    }
 }
 
 function handleRoomChange(room) {
@@ -1240,7 +1247,6 @@ function handleRoomChange(room) {
     
     if (prevRound !== room.round) {
         onlineState.myActionSubmitted = false;
-        currentRoundActions = {};
         
         if (onlineState.myHp === 0 || onlineState.oppHp === 0) {
             if (!onlineState.gameOver) {
@@ -1272,60 +1278,6 @@ function handleRoomChange(room) {
     
     updateOnlineDisplay();
     updateOnlineButtonStates();
-}
-
-function handleActionInsert(action) {
-    if (!action) return;
-    if (action.round !== onlineState.round) return;
-    
-    checkBothActionsAndResolve();
-}
-
-function handleEmoteInsert(emote) {
-    if (!emote || emote.player === onlineState.myPlayer) return;
-    displayOpponentEmote(emote.emote);
-}
-
-async function checkBothActionsAndResolve() {
-    if (isResolving) return;
-    if (onlineState.gameOver) return;
-    
-    try {
-        // 先获取房间当前回合
-        const roomCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const roomData = await roomCheck.json();
-        if (roomData.length === 0) return;
-        
-        const currentRound = roomData[0].round;
-        
-        // 只查询当前回合的动作
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${currentRound}&order=id.asc`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const actions = await res.json();
-        
-        if (actions.length >= 2) {
-            const p1Action = actions.find(a => a.player === 'player1');
-            const p2Action = actions.find(a => a.player === 'player2');
-            
-            if (p1Action && p2Action) {
-                isResolving = true;
-                if (onlineState.myPlayer === 'player1') {
-                    await resolveOnlineRound(p1Action.action, p2Action.action, currentRound);
-                }
-                isResolving = false;
-            }
-        } else {
-            if (onlineState.myActionSubmitted) {
-                document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
-            }
-        }
-    } catch (e) {
-        console.log('查询失败:', e);
-        isResolving = false;
-    }
 }
 
 function resetOnlineGame() {
@@ -1364,8 +1316,6 @@ function resetOnlineGame() {
     onlineState.myActionSubmitted = false;
     onlineState.rematchRequested = false;
     lastRoundMessage = '';
-    currentRoundActions = {};
-    isResolving = false;
     myEmoteActive = false;
     document.getElementById('rematchBtn').style.display = 'none';
     document.getElementById('rematchBtn').disabled = false;
@@ -1459,7 +1409,7 @@ async function onlineAction(action) {
         }
 
         sendStats(action, 'online');
-        await checkBothActionsAndResolve();
+        document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
         
     } catch (e) {
         onlineState.myActionSubmitted = false;
