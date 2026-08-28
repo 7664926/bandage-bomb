@@ -1084,6 +1084,7 @@ let sessionNickname = '';
 let myEmoteActive = false;
 let processingRound = 0;
 let isResolving = false;
+let lastResolvedRound = 0; // 记录最后结算的回合
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1164,6 +1165,7 @@ function leaveRoom() {
     processingRound = 0;
     isResolving = false;
     lastRoundMessage = '';
+    lastResolvedRound = 0;
     myEmoteActive = false;
     document.getElementById('onlineGame').style.display = 'none';
     document.getElementById('onlineMenu').style.display = 'block';
@@ -1234,28 +1236,30 @@ function handleRoomChange(room) {
     const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
     document.getElementById('onlineOpponentName').textContent = oppNickname;
     
-    // round变化时处理
-    if (prevRound !== room.round) {
+    // 只在回合变化且没有正在结算时更新消息
+    if (prevRound !== room.round && !isResolving) {
         onlineState.myActionSubmitted = false;
         
         // 游戏结束
         if (onlineState.myHp === 0 || onlineState.oppHp === 0) {
             if (!onlineState.gameOver) {
-                // 构建完整的结束消息：操作详情 + 结束语
-                let endMessage = lastRoundMessage || '';
+                onlineState.gameOver = true;
                 if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
                     onlineStats.draws++;
-                    endMessage += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
                 } else if (onlineState.myHp === 0) {
                     onlineStats.losses++;
-                    endMessage += `<br><span class="big-message">😢 遗憾落败......</span>`;
                 } else {
                     onlineStats.wins++;
-                    endMessage += `<br><span class="big-message">🎉 恭喜！大获全胜！</span>`;
                 }
-                lastRoundMessage = endMessage;
-                onlineState.gameOver = true;
-                document.getElementById('onlineMessage').innerHTML = endMessage;
+                
+                // 如果 lastRoundMessage 为空或者是旧的消息，重新获取
+                if (!lastRoundMessage || lastResolvedRound !== prevRound) {
+                    // 这里应该显示"结算中..."
+                    document.getElementById('onlineMessage').textContent = '⏳ 结算中...';
+                } else {
+                    document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+                }
+                
                 document.getElementById('rematchBtn').style.display = 'block';
                 document.getElementById('rematchBtn').disabled = false;
                 saveUserData();
@@ -1263,7 +1267,7 @@ function handleRoomChange(room) {
         } 
         // 对局中
         else {
-            if (lastRoundMessage) {
+            if (lastRoundMessage && lastResolvedRound === prevRound) {
                 document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
             } else {
                 document.getElementById('onlineMessage').textContent = '选择你的行动';
@@ -1391,6 +1395,7 @@ function resetOnlineGame() {
     processingRound = 0;
     isResolving = false;
     lastRoundMessage = '';
+    lastResolvedRound = 0;
     myEmoteActive = false;
     document.getElementById('rematchBtn').style.display = 'none';
     document.getElementById('rematchBtn').disabled = false;
@@ -1595,7 +1600,6 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     const myClass = (myAction === '强绷' || myAction === '绷带') ? 'ult-highlight' : 'action-highlight';
     const oppClass = (oppAction === '强绷' || oppAction === '绷带') ? 'ult-highlight' : 'action-highlight';
     
-    // 构建操作详情消息（不包含结束语）
     let msg = `第${roundNum}回合：你「<span class="${myClass}">${myAction}</span>」 vs 对手「<span class="${oppClass}">${oppAction}</span>」<br>`;
     msg += `你受到${dmgToMe}伤害，对手受到${dmgToOpp}伤害`;
     
@@ -1608,7 +1612,6 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     if (myUltBlocked) msg += `<br>💥 你的大招被克制！💥`;
     if (oppUltBlocked) msg += `<br>💥 对手的大招被克制！💥`;
     
-    // 检查是否游戏结束
     if (myHp === 0 && oppHp === 0) {
         msg += `<br><span class="big-message">🤝 平局。旗鼓相当的对手。</span>`;
         onlineStats.draws++;
@@ -1626,8 +1629,9 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         saveUserData();
     }
     
-    // 保存完整的消息（包括结束语）
+    // 更新消息和结算回合
     lastRoundMessage = msg;
+    lastResolvedRound = roundNum;
     
     // 更新本地状态
     onlineState.myHp = myHp;
@@ -1658,11 +1662,9 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         })
     });
     
-    // 更新显示
     updateOnlineDisplay();
     updateOnlineButtonStates();
     
-    // 立即显示完整消息
     document.getElementById('onlineMessage').innerHTML = msg;
     
     if (onlineState.gameOver) {
