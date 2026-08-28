@@ -1082,10 +1082,8 @@ let onlineStats = { wins:0, losses:0, draws:0 };
 let lastRoundMessage = '';
 let sessionNickname = '';
 let myEmoteActive = false;
-let processingRound = 0;
-let isResolving = false;
-let lastResolvedRound = 0;
-let resolveAttempts = {}; // 记录每个回合的结算尝试次数
+let pendingAction = null; // 记录当前回合我的动作
+let currentRoundActions = {}; // 记录当前回合双方动作
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1163,11 +1161,9 @@ function leaveRoom() {
     }
     onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false };
     onlineStats = { wins:0, losses:0, draws:0 };
-    processingRound = 0;
-    isResolving = false;
     lastRoundMessage = '';
-    lastResolvedRound = 0;
-    resolveAttempts = {};
+    pendingAction = null;
+    currentRoundActions = {};
     myEmoteActive = false;
     document.getElementById('onlineGame').style.display = 'none';
     document.getElementById('onlineMenu').style.display = 'block';
@@ -1216,8 +1212,6 @@ function startRealtime() {
 function handleRoomChange(room) {
     if (!room) return;
     
-    const prevRound = onlineState.round;
-    
     onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
     onlineState.oppHp = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
     onlineState.myEnergy = onlineState.myPlayer === 'player1' ? room.player1_energy : room.player2_energy;
@@ -1238,12 +1232,11 @@ function handleRoomChange(room) {
     const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
     document.getElementById('onlineOpponentName').textContent = oppNickname;
     
-    // 只在回合变化且没有正在结算时更新消息
-    if (prevRound !== room.round && !isResolving) {
-        onlineState.myActionSubmitted = false;
-        
-        // 游戏结束
+    // 检查是否是新回合
+    if (onlineState.myActionSubmitted && !onlineState.gameOver) {
+        // 如果我已经出招，但房间round没变，说明对手还没出招
         if (onlineState.myHp === 0 || onlineState.oppHp === 0) {
+            // 游戏结束，但消息可能还没更新
             if (!onlineState.gameOver) {
                 onlineState.gameOver = true;
                 if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
@@ -1253,24 +1246,9 @@ function handleRoomChange(room) {
                 } else {
                     onlineStats.wins++;
                 }
-                
-                if (lastRoundMessage && lastResolvedRound === prevRound) {
-                    document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
-                } else {
-                    document.getElementById('onlineMessage').textContent = '⏳ 结算中...';
-                }
-                
                 document.getElementById('rematchBtn').style.display = 'block';
                 document.getElementById('rematchBtn').disabled = false;
                 saveUserData();
-            }
-        } 
-        // 对局中
-        else {
-            if (lastRoundMessage && lastResolvedRound === prevRound) {
-                document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
-            } else {
-                document.getElementById('onlineMessage').textContent = '选择你的行动';
             }
         }
     }
@@ -1280,148 +1258,38 @@ function handleRoomChange(room) {
 }
 
 function handleActionInsert(action) {
-    if (!action || action.player === onlineState.myPlayer) return;
-    // 对手出招了，立即尝试结算
-    tryResolve(action.round);
+    if (!action) return;
+    
+    // 只处理当前回合的动作
+    if (action.round !== onlineState.round) return;
+    
+    // 记录动作
+    currentRoundActions[action.player] = action.action;
+    
+    // 如果我是player1，负责结算
+    if (onlineState.myPlayer === 'player1') {
+        // 检查是否双方都出招了
+        if (currentRoundActions['player1'] && currentRoundActions['player2']) {
+            const p1Action = currentRoundActions['player1'];
+            const p2Action = currentRoundActions['player2'];
+            // 清空当前回合动作记录
+            currentRoundActions = {};
+            // 执行结算
+            resolveOnlineRound(p1Action, p2Action, action.round);
+        }
+    }
+    // 如果我是player2，只更新显示
+    else {
+        if (action.player === 'player1') {
+            // 对手（player1）出招了
+            document.getElementById('onlineMessage').textContent = '⏳ 等待结算...';
+        }
+    }
 }
 
 function handleEmoteInsert(emote) {
     if (!emote || emote.player === onlineState.myPlayer) return;
     displayOpponentEmote(emote.emote);
-}
-
-async function tryResolve(roundNum) {
-    // 如果这个回合已经结算过了，直接返回
-    if (lastResolvedRound >= roundNum) return;
-    
-    // 如果正在结算同一个回合，直接返回
-    if (processingRound === roundNum) return;
-    
-    // 如果全局正在结算，等待后重试
-    if (isResolving) {
-        setTimeout(() => {
-            if (!isResolving) tryResolve(roundNum);
-        }, 500);
-        return;
-    }
-    
-    isResolving = true;
-    processingRound = roundNum;
-    
-    try {
-        // 获取房间当前状态
-        const roomCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const roomCheckData = await roomCheck.json();
-        if (roomCheckData.length === 0 || roomCheckData[0].round !== roundNum) {
-            return;
-        }
-        
-        // 获取该回合的所有动作
-        let actions = await fetchActions(roundNum);
-        
-        // 如果不够2条，重试几次
-        for (let i = 0; i < 5 && actions.length < 2; i++) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            actions = await fetchActions(roundNum);
-        }
-        
-        if (actions.length < 2) {
-            // 如果还是不够2条，启动定期检查
-            startPeriodicCheck(roundNum);
-            return;
-        }
-        
-        // 去重：每个玩家只取最新的一条
-        const p1Actions = actions.filter(a => a.player === 'player1');
-        const p2Actions = actions.filter(a => a.player === 'player2');
-        
-        if (p1Actions.length === 0 || p2Actions.length === 0) {
-            startPeriodicCheck(roundNum);
-            return;
-        }
-        
-        // 按id排序，取最新的
-        p1Actions.sort((a, b) => b.id - a.id);
-        p2Actions.sort((a, b) => b.id - a.id);
-        
-        const p1A = p1Actions[0].action;
-        const p2A = p2Actions[0].action;
-        
-        // 再次检查房间状态
-        const finalCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const finalCheckData = await finalCheck.json();
-        if (finalCheckData.length === 0 || finalCheckData[0].round !== roundNum) {
-            return;
-        }
-        
-        await resolveOnlineRound(p1A, p2A, roundNum);
-        
-        // 清理已结算的动作
-        await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
-            method: 'DELETE',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        
-    } finally {
-        isResolving = false;
-        processingRound = 0;
-    }
-}
-
-function startPeriodicCheck(roundNum) {
-    // 如果已经有定时检查在进行，不重复启动
-    if (resolveAttempts[roundNum]) return;
-    
-    resolveAttempts[roundNum] = true;
-    let attempts = 0;
-    const maxAttempts = 10; // 最多检查10次，每次1秒
-    
-    const checkInterval = setInterval(async () => {
-        attempts++;
-        
-        // 检查房间是否还存在
-        const roomCheck = await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-        });
-        const roomData = await roomCheck.json();
-        
-        if (roomData.length === 0 || roomData[0].round !== roundNum) {
-            // 房间不存在或回合已结算
-            clearInterval(checkInterval);
-            delete resolveAttempts[roundNum];
-            return;
-        }
-        
-        // 检查动作是否齐全
-        const actions = await fetchActions(roundNum);
-        if (actions.length >= 2) {
-            clearInterval(checkInterval);
-            delete resolveAttempts[roundNum];
-            // 重新触发结算
-            if (!isResolving) {
-                tryResolve(roundNum);
-            }
-            return;
-        }
-        
-        // 超过最大尝试次数，停止检查
-        if (attempts >= maxAttempts) {
-            clearInterval(checkInterval);
-            delete resolveAttempts[roundNum];
-        }
-    }, 1000);
-}
-
-async function fetchActions(roundNum) {
-    const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}&order=id.asc`,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-    );
-    return await res.json();
 }
 
 function resetOnlineGame() {
@@ -1458,11 +1326,9 @@ function resetOnlineGame() {
     onlineState.gameOver = false;
     onlineState.myActionSubmitted = false;
     onlineState.rematchRequested = false;
-    processingRound = 0;
-    isResolving = false;
     lastRoundMessage = '';
-    lastResolvedRound = 0;
-    resolveAttempts = {};
+    pendingAction = null;
+    currentRoundActions = {};
     myEmoteActive = false;
     document.getElementById('rematchBtn').style.display = 'none';
     document.getElementById('rematchBtn').disabled = false;
@@ -1524,18 +1390,8 @@ function displayOpponentEmote(emote) {
 async function onlineAction(action) {
     if (onlineState.gameOver || onlineState.myActionSubmitted) return;
     
-    const existingCheck = await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${onlineState.round}&player=eq.${onlineState.myPlayer}`, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-    });
-    const existingData = await existingCheck.json();
-    
-    if (existingData.length > 0) {
-        onlineState.myActionSubmitted = true;
-        updateOnlineButtonStates();
-        return;
-    }
-    
     onlineState.myActionSubmitted = true;
+    pendingAction = action;
     updateOnlineButtonStates();
 
     try {
@@ -1547,26 +1403,32 @@ async function onlineAction(action) {
 
         if (!res.ok) {
             onlineState.myActionSubmitted = false;
+            pendingAction = null;
             updateOnlineButtonStates();
             alert('出招失败，请重试');
             return;
         }
 
         sendStats(action, 'online');
-        document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
         
-        // 立即尝试结算
-        setTimeout(() => {
-            tryResolve(onlineState.round);
-        }, 300);
+        // 记录我的动作
+        currentRoundActions[onlineState.myPlayer] = action;
         
-        // 同时启动定期检查作为备份
-        setTimeout(() => {
-            startPeriodicCheck(onlineState.round);
-        }, 1000);
+        // 如果我是player1且双方都出招了，立即结算
+        if (onlineState.myPlayer === 'player1' && 
+            currentRoundActions['player1'] && 
+            currentRoundActions['player2']) {
+            const p1Action = currentRoundActions['player1'];
+            const p2Action = currentRoundActions['player2'];
+            currentRoundActions = {};
+            await resolveOnlineRound(p1Action, p2Action, onlineState.round);
+        } else {
+            document.getElementById('onlineMessage').textContent = '⏳ 已出招，等待对手...';
+        }
         
     } catch (e) {
         onlineState.myActionSubmitted = false;
+        pendingAction = null;
         updateOnlineButtonStates();
         alert('网络错误，请重试');
     }
@@ -1590,10 +1452,10 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     });
     const roomData = await roomRes.json();
-    if (roomData.length === 0) return null;
+    if (roomData.length === 0) return;
     const room = roomData[0];
     
-    if (room.round !== roundNum) return null;
+    if (room.round !== roundNum) return;
     
     const myHpBefore = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
     const oppHpBefore = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
@@ -1702,11 +1564,8 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         saveUserData();
     }
     
-    // 更新消息和结算回合
     lastRoundMessage = msg;
-    lastResolvedRound = roundNum;
     
-    // 更新本地状态
     onlineState.myHp = myHp;
     onlineState.oppHp = oppHp;
     onlineState.myEnergy = myEnergy;
@@ -1717,6 +1576,7 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     onlineState.oppBreakCd = oppBreak;
     onlineState.round = roundNum + 1;
     onlineState.myActionSubmitted = false;
+    pendingAction = null;
     
     // 更新数据库
     await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
@@ -1735,6 +1595,12 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         })
     });
     
+    // 清理已结算的动作
+    await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    
     updateOnlineDisplay();
     updateOnlineButtonStates();
     
@@ -1745,8 +1611,6 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         document.getElementById('rematchBtn').disabled = false;
         updateOnlineButtonStates();
     }
-    
-    return msg;
 }
 
 function updateOnlineDisplay() {
