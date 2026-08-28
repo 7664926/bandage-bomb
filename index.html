@@ -1400,6 +1400,7 @@ else if (gameState.ai.hp === 0) { stats[difficulty].wins++; document.getElementB
         async function requestRematch() {
             if (!onlineState.gameOver || onlineState.rematchRequested) return;
             onlineState.rematchRequested = true;
+            isResolving = false;
             document.getElementById('rematchBtn').disabled = true;
             const field = onlineState.myPlayer === 'player1' ? 'player1_rematch' : 'player2_rematch';
             await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
