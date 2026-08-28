@@ -1082,8 +1082,7 @@ let onlineStats = { wins:0, losses:0, draws:0 };
 let lastRoundMessage = '';
 let sessionNickname = '';
 let myEmoteActive = false;
-let pendingAction = null; // 记录当前回合我的动作
-let currentRoundActions = {}; // 记录当前回合双方动作
+let currentRoundActions = {};
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1162,7 +1161,6 @@ function leaveRoom() {
     onlineState = { roomCode:null, myPlayer:null, round:1, myHp:4, oppHp:4, myEnergy:0, oppEnergy:0, myUltUsed:false, oppUltUsed:false, myBreakCd:false, oppBreakCd:false, gameOver:false, channel:null, myActionSubmitted:false, rematchRequested:false };
     onlineStats = { wins:0, losses:0, draws:0 };
     lastRoundMessage = '';
-    pendingAction = null;
     currentRoundActions = {};
     myEmoteActive = false;
     document.getElementById('onlineGame').style.display = 'none';
@@ -1212,6 +1210,8 @@ function startRealtime() {
 function handleRoomChange(room) {
     if (!room) return;
     
+    const prevRound = onlineState.round;
+    
     onlineState.myHp = onlineState.myPlayer === 'player1' ? room.player1_hp : room.player2_hp;
     onlineState.oppHp = onlineState.myPlayer === 'player1' ? room.player2_hp : room.player1_hp;
     onlineState.myEnergy = onlineState.myPlayer === 'player1' ? room.player1_energy : room.player2_energy;
@@ -1232,11 +1232,13 @@ function handleRoomChange(room) {
     const oppNickname = onlineState.myPlayer === 'player1' ? (room.player2_nickname || '对手') : (room.player1_nickname || '对手');
     document.getElementById('onlineOpponentName').textContent = oppNickname;
     
-    // 检查是否是新回合
-    if (onlineState.myActionSubmitted && !onlineState.gameOver) {
-        // 如果我已经出招，但房间round没变，说明对手还没出招
+    // 回合变化时处理
+    if (prevRound !== room.round) {
+        onlineState.myActionSubmitted = false;
+        currentRoundActions = {};
+        
+        // 游戏结束
         if (onlineState.myHp === 0 || onlineState.oppHp === 0) {
-            // 游戏结束，但消息可能还没更新
             if (!onlineState.gameOver) {
                 onlineState.gameOver = true;
                 if (onlineState.myHp === 0 && onlineState.oppHp === 0) {
@@ -1246,9 +1248,22 @@ function handleRoomChange(room) {
                 } else {
                     onlineStats.wins++;
                 }
+                
+                if (lastRoundMessage) {
+                    document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+                }
+                
                 document.getElementById('rematchBtn').style.display = 'block';
                 document.getElementById('rematchBtn').disabled = false;
                 saveUserData();
+            }
+        } 
+        // 对局中
+        else {
+            if (lastRoundMessage) {
+                document.getElementById('onlineMessage').innerHTML = lastRoundMessage;
+            } else {
+                document.getElementById('onlineMessage').textContent = '选择你的行动';
             }
         }
     }
@@ -1272,16 +1287,13 @@ function handleActionInsert(action) {
         if (currentRoundActions['player1'] && currentRoundActions['player2']) {
             const p1Action = currentRoundActions['player1'];
             const p2Action = currentRoundActions['player2'];
-            // 清空当前回合动作记录
             currentRoundActions = {};
-            // 执行结算
             resolveOnlineRound(p1Action, p2Action, action.round);
         }
     }
     // 如果我是player2，只更新显示
     else {
-        if (action.player === 'player1') {
-            // 对手（player1）出招了
+        if (action.player === 'player1' && onlineState.myActionSubmitted) {
             document.getElementById('onlineMessage').textContent = '⏳ 等待结算...';
         }
     }
@@ -1327,7 +1339,6 @@ function resetOnlineGame() {
     onlineState.myActionSubmitted = false;
     onlineState.rematchRequested = false;
     lastRoundMessage = '';
-    pendingAction = null;
     currentRoundActions = {};
     myEmoteActive = false;
     document.getElementById('rematchBtn').style.display = 'none';
@@ -1391,7 +1402,6 @@ async function onlineAction(action) {
     if (onlineState.gameOver || onlineState.myActionSubmitted) return;
     
     onlineState.myActionSubmitted = true;
-    pendingAction = action;
     updateOnlineButtonStates();
 
     try {
@@ -1403,7 +1413,6 @@ async function onlineAction(action) {
 
         if (!res.ok) {
             onlineState.myActionSubmitted = false;
-            pendingAction = null;
             updateOnlineButtonStates();
             alert('出招失败，请重试');
             return;
@@ -1428,7 +1437,6 @@ async function onlineAction(action) {
         
     } catch (e) {
         onlineState.myActionSubmitted = false;
-        pendingAction = null;
         updateOnlineButtonStates();
         alert('网络错误，请重试');
     }
@@ -1576,9 +1584,7 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
     onlineState.oppBreakCd = oppBreak;
     onlineState.round = roundNum + 1;
     onlineState.myActionSubmitted = false;
-    pendingAction = null;
     
-    // 更新数据库
     await fetch(`${SUPABASE_URL}/rest/v1/rooms?room_code=eq.${onlineState.roomCode}`, {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -1595,7 +1601,6 @@ async function resolveOnlineRound(p1A, p2A, roundNum) {
         })
     });
     
-    // 清理已结算的动作
     await fetch(`${SUPABASE_URL}/rest/v1/room_actions?room_code=eq.${onlineState.roomCode}&round=eq.${roundNum}`, {
         method: 'DELETE',
         headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
